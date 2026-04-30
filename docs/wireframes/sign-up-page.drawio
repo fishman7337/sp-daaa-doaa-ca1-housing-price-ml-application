@@ -1,0 +1,106 @@
+﻿<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" version="29.2.4">
+  <diagram id="signup-page" name="Sign Up">
+    <mxGraphModel dx="1042" dy="623" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="nav-bar" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;" value="" vertex="1">
+          <mxGeometry height="60" width="1600" as="geometry" />
+        </mxCell>
+        <mxCell id="nav-logo" parent="1" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fontStyle=1;" value="EstateScope AI" vertex="1">
+          <mxGeometry height="30" width="220" x="40" y="15" as="geometry" />
+        </mxCell>
+        <mxCell id="nav-login" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;" value="Login" vertex="1">
+          <mxGeometry height="30" width="60" x="1180" y="15" as="geometry" />
+        </mxCell>
+        <mxCell id="nav-signup" parent="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#00bcd4;fillColor=#e0f7fa;align=center;verticalAlign=middle;fontStyle=1;" value="Sign up" vertex="1">
+          <mxGeometry height="36" width="90" x="1245" y="12" as="geometry" />
+        </mxCell>
+        <mxCell id="nav-theme-toggle" parent="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#999999;fillColor=#ffffff;" value="Dark / Light" vertex="1">
+          <mxGeometry height="30" width="150" x="1360" y="15" as="geometry" />
+        </mxCell>
+        <mxCell id="bg" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="840" width="1600" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="main-wrapper" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="420" width="1440" x="80" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="left-card" parent="main-wrapper" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f5f5f5;" value="" vertex="1">
+          <mxGeometry height="420" width="820" as="geometry" />
+        </mxCell>
+        <mxCell id="left-pill" parent="left-card" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=center;verticalAlign=middle;" value="Zero-trust ready" vertex="1">
+          <mxGeometry height="40" width="300" x="40" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="left-heading" parent="left-card" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontStyle=1;fontSize=18;" value="Launch a secure valuation workspace" vertex="1">
+          <mxGeometry height="40" width="700" x="40" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="left-sub" parent="left-card" style="text;html=1;whiteSpace=wrap;strokeColor=none;" value="Per-user histories, encrypted credentials, and animated interfaces that feel premium." vertex="1">
+          <mxGeometry height="40" width="620" x="40" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="left-pill1" parent="left-card" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=center;verticalAlign=middle;" value="Multi-tenant" vertex="1">
+          <mxGeometry height="40" width="220" x="40" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="left-pill2" parent="left-card" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=center;verticalAlign=middle;" value="TensorFlow RNN + CNN" vertex="1">
+          <mxGeometry height="40" width="260" x="280" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="left-pill3" parent="left-card" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=center;verticalAlign=middle;" value="City/zip target encodings" vertex="1">
+          <mxGeometry height="40" width="240" x="560" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="right-card" parent="main-wrapper" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f9f9f9;" value="" vertex="1">
+          <mxGeometry height="420" width="580" x="860" as="geometry" />
+        </mxCell>
+        <mxCell id="right-title" parent="right-card" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontStyle=1;fontSize=18;" value="Create an account" vertex="1">
+          <mxGeometry height="30" width="300" x="40" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="right-sub" parent="right-card" style="text;html=1;whiteSpace=wrap;strokeColor=none;" value="Passwords are hashed; your prediction history stays private." vertex="1">
+          <mxGeometry height="30" width="520" x="40" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="label-username" parent="right-card" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontStyle=1;" value="Username" vertex="1">
+          <mxGeometry height="20" width="200" x="40" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="input-username" parent="right-card" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" value="Text input" vertex="1">
+          <mxGeometry height="40" width="500" x="40" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="label-email" parent="right-card" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontStyle=1;" value="Email" vertex="1">
+          <mxGeometry height="20" width="200" x="40" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="input-email" parent="right-card" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" value="Email input" vertex="1">
+          <mxGeometry height="40" width="500" x="40" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="label-password" parent="right-card" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontStyle=1;" value="Password" vertex="1">
+          <mxGeometry height="20" width="200" x="40" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="input-password" parent="right-card" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" value="Password input" vertex="1">
+          <mxGeometry height="40" width="500" x="40" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="checkbox-terms" parent="right-card" style="shape=rectangle;rounded=0;strokeColor=#999999;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="20" width="20" x="40" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="terms-label" parent="right-card" style="text;html=1;whiteSpace=wrap;strokeColor=none;" value="I agree to the Terms and Privacy." vertex="1">
+          <mxGeometry height="20" width="300" x="70" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="btn-create" parent="right-card" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#00bcd4;fillColor=#e0f7fa;align=center;verticalAlign=middle;fontStyle=1;" value="Create account" vertex="1">
+          <mxGeometry height="50" width="500" x="40" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="already" parent="right-card" style="text;html=1;whiteSpace=wrap;strokeColor=none;" value="Already registered?" vertex="1">
+          <mxGeometry height="20" width="150" x="40" y="395" as="geometry" />
+        </mxCell>
+        <mxCell id="login-link" parent="right-card" style="text;html=1;fontStyle=1;strokeColor=none;" value="Login" vertex="1">
+          <mxGeometry height="20" width="60" x="170" y="395" as="geometry" />
+        </mxCell>
+        <mxCell id="footer" parent="1" style="swimlane;rounded=0;html=1;startSize=0;fillColor=#111111;strokeColor=#000000;fontColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="140" width="1600" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="footer-brand" parent="footer" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontColor=#ffffff;" value="EstateScope AI&#xa;Multimodal US housing valuations - structured, text, and vision in one ensemble." vertex="1">
+          <mxGeometry height="80" width="420" x="120" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="footer-contact" parent="footer" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontColor=#ffffff;" value="Contact&#xa;Goh Kun Ming • P2415691&#xa;ORCiD: 0009-0008-7666-781X" vertex="1">
+          <mxGeometry height="80" width="360" x="640" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="footer-app" parent="footer" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontColor=#ffffff;" value="App&#xa;Predict&#xa;Sign up&#xa;Login" vertex="1">
+          <mxGeometry height="80" width="200" x="1100" y="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

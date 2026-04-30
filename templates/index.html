@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}EstateScope AI - Multimodal Valuations{% endblock %}
+{% block content %}
+<section class="hero reveal">
+  <div>
+    <div class="floating-badge">US housing intelligence</div>
+    <h1>Multimodal valuations for US listings built on tabular, text, and image signals.</h1>
+    <p>Structured model expects the engineered features from the DOAA notebooks (beds, baths, house size, lot size in acres, city, state, status plus ratios). Text (BiGRU) and image (lightweight CNN) are trained on the Austin descriptions and images; all available modalities are averaged.</p>
+    <div class="stat-grid">
+      <div class="stat">Secure login, encrypted passwords</div>
+      <div class="stat">Structured regressor + BiGRU text head</div>
+      <div class="stat">Lightweight CNN with image cues</div>
+      <div class="stat">Per-user history stored in SQLite</div>
+    </div>
+    <div style="margin-top:20px;">
+      {% if current_user.is_authenticated %}
+        <a class="btn" href="{{ url_for('main.dashboard') }}">Open predictor</a>
+      {% else %}
+        <a class="btn" href="{{ url_for('main.signup') }}">Start with a free account</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="hero-visual">
+    <video class="hero-video" autoplay muted loop playsinline>
+      <!-- Place your file at static/uploads/hero-background.mp4 -->
+      <source src="{{ url_for('static', filename='uploads/hero-background.mp4') }}" type="video/mp4">
+    </video>
+    <div class="overlay"></div>
+    <div class="orb orb--a"></div>
+    <div class="orb orb--b"></div>
+    <div class="orb orb--c"></div>
+    <div class="copy">
+      <h3>How it works</h3>
+      <p class="muted">Tabular model: engineered features from 05_modelling.ipynb / src pipelines (beds, baths, house size, lot size in acres, city/state cleans, ratios like total_rooms, house_size_per_room, log1p sizes). Text head reads the cleaned listing description; image head uses brightness/texture as a simple proxy. Ensemble averages the modalities you supply.</p>
+      <div class="tag">Beds/Baths/House size/Lot acres</div>
+      <div class="tag">City/State cleans + status flags</div>
+      <div class="tag">Ratios + log1p transforms</div>
+    </div>
+  </div>
+</section>
+
+<section class="card section reveal">
+  <h2>What to provide</h2>
+  <p class="muted">Enter the straightforward listing details; the app will handle the feature engineering behind the scenes.</p>
+  <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px,1fr));">
+    <div class="stat">
+      <strong>Location</strong><br>
+      City, state, and ZIP to ground the valuation.
+    </div>
+    <div class="stat">
+      <strong>Home basics</strong><br>
+      Beds, baths, living area, lot size, year built, property type/status.
+    </div>
+    <div class="stat">
+      <strong>Parking</strong><br>
+      Garage/parking details (if available) to reflect convenience.
+    </div>
+    <div class="stat">
+      <strong>Optional boosts</strong><br>
+      Listing description and an image to enrich the text/CNN heads.
+    </div>
+  </div>
+</section>
+
+<section class="card section reveal">
+  <h2>Regional snapshots</h2>
+  <p class="muted">Drop in your own photos to anchor local character; these slots are placeholders for US regional cues.</p>
+  <div class="grid">
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="height:180px; background-image: url('{{ url_for('static', filename='uploads/region-west.jpg') }}'); background-position: center; background-size: cover; background-repeat: no-repeat;"></div>
+      <div style="padding:16px;">
+        <strong>West Coast</strong>
+        <p class="muted">High land value, higher tax in metros, strong condo/townhome mix.</p>
+      </div>
+    </div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="height:180px; background-image: url('{{ url_for('static', filename='uploads/region-sunbelt.jpg') }}'); background-position: center; background-size: cover; background-repeat: no-repeat;"></div>
+      <div style="padding:16px;">
+        <strong>Sun Belt</strong>
+        <p class="muted">Fast inventory turnover, newer builds, larger lots and garages.</p>
+      </div>
+    </div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="height:180px; background-image: url('{{ url_for('static', filename='uploads/region-northeast.jpg') }}'); background-position: center; background-size: cover; background-repeat: no-repeat;"></div>
+      <div style="padding:16px;">
+        <strong>Northeast</strong>
+        <p class="muted">Older stock, premium school districts, tighter lot sizes in metros.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="media-row">
+    <div class="media-box reveal">
+      <video autoplay muted loop playsinline>
+        <!-- Place your file at static/uploads/market-timelapse.mp4 -->
+        <source src="{{ url_for('static', filename='uploads/market-timelapse.mp4') }}" type="video/mp4">
+      </video>
+      <div class="media-overlay"></div>
+    </div>
+    <div class="card reveal">
+      <h2>Market momentum & absorption</h2>
+      <p class="muted">Tabular priors include city/zip average price and listing density. Pair your inputs with local price-per-sqft, days on market, and list-to-sale ratios from your own data if available; the model will still fall back to the engineered features above.</p>
+      <div class="bullet-stack">
+        <div class="pill-chip">Inventory velocity</div>
+        <div class="pill-chip">Price-per-sqft priors</div>
+        <div class="pill-chip">List vs sale deltas</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="media-row">
+    <div class="card reveal">
+      <h2>Neighborhood texture</h2>
+      <p class="muted">Images help the CNN approximate curb appeal via brightness/texture; descriptions feed the BiGRU on upgrades (renovated kitchen, new roof, HVAC). Structured ratios keep the prediction grounded when text or images are missing.</p>
+      <div class="bullet-stack">
+        <div class="pill-chip">Curb appeal brightness</div>
+        <div class="pill-chip">Upgrade phrases</div>
+        <div class="pill-chip">Lot vs living ratios</div>
+      </div>
+    </div>
+    <div class="media-box reveal">
+      <img src="{{ url_for('static', filename='uploads/neighborhood.jpg') }}" alt="Neighborhood context">
+      <div class="media-overlay"></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="media-row">
+    <div class="media-box reveal">
+      <img src="{{ url_for('static', filename='uploads/analytics-dashboard.jpg') }}" alt="Analytics dashboard">
+      <div class="media-overlay"></div>
+    </div>
+    <div class="card reveal">
+      <h2>Auditability & history</h2>
+      <p class="muted">Every prediction is tied to your account and stored in SQLite with modality breakdowns. Review tabular/NLP/CNN contributions to understand variance and refine your inputs.</p>
+      <div class="bullet-stack">
+        <div class="pill-chip">Per-user histories</div>
+        <div class="pill-chip">Modality breakdowns</div>
+        <div class="pill-chip">WTForms validation + auth</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+  gsap.from(".floating-badge", { y: -10, opacity: 0, duration: 0.8, ease: "power3.out" });
+  gsap.from(".hero h1", { y: 18, opacity: 0, duration: 0.9, delay: 0.05, ease: "power3.out" });
+  gsap.from(".hero p", { y: 16, opacity: 0, duration: 0.9, delay: 0.12, ease: "power3.out" });
+  gsap.from(".stat", { y: 12, opacity: 0, duration: 0.8, delay: 0.2, ease: "power3.out", stagger: 0.07 });
+  gsap.from(".hero-card", { scale: 0.98, opacity: 0, duration: 1, delay: 0.2, ease: "power3.out" });
+</script>
+{% endblock %}

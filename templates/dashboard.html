@@ -1,0 +1,895 @@
+{% extends "base.html" %}
+{% block title %}Predict - EstateScope AI{% endblock %}
+{% block content %}
+<div class="predict-grid">
+  <div class="card">
+    <h2>Multimodal prediction</h2>
+    <p class="muted">Provide any mix of structured fields, a description, or an image. At least one modality is required; all three give the best ensemble.</p>
+    <form id="predict-form" method="post" enctype="multipart/form-data">
+      {{ form.hidden_tag() }}
+      <div class="grid">
+        <div>
+          {{ form.state.label }}<span class="required">*</span>{{ form.state() }}
+          {% for err in form.state.errors %}<div class="field-error">{{ err }}</div>{% endfor %}
+          <div class="field-error" data-error-for="state"></div>
+        </div>
+        <div>
+          {{ form.city.label }}<span class="required">*</span>{{ form.city() }}
+          {% for err in form.city.errors %}<div class="field-error">{{ err }}</div>{% endfor %}
+          <div class="field-error" data-error-for="city"></div>
+        </div>
+        <div>
+          {{ form.status.label }}<span class="required">*</span>{{ form.status() }}
+          {% for err in form.status.errors %}<div class="field-error">{{ err }}</div>{% endfor %}
+          <div class="field-error" data-error-for="status"></div>
+        </div>
+        <div>
+          {{ form.bedrooms.label }}<span class="required">*</span>{{ form.bedrooms() }}
+          {% for err in form.bedrooms.errors %}<div class="field-error">{{ err }}</div>{% endfor %}
+          <div class="field-error" data-error-for="bedrooms"></div>
+        </div>
+        <div>
+          {{ form.bathrooms.label }}<span class="required">*</span>{{ form.bathrooms() }}
+          {% for err in form.bathrooms.errors %}<div class="field-error">{{ err }}</div>{% endfor %}
+          <div class="field-error" data-error-for="bathrooms"></div>
+        </div>
+        <div>
+          {{ form.living_area.label }}<span class="required">*</span>{{ form.living_area() }}
+          {% for err in form.living_area.errors %}<div class="field-error">{{ err }}</div>{% endfor %}
+          <div class="field-error" data-error-for="living_area"></div>
+        </div>
+        <div>
+          {{ form.lot_size.label }}<span class="required">*</span>{{ form.lot_size() }}
+          {% for err in form.lot_size.errors %}<div class="field-error">{{ err }}</div>{% endfor %}
+          <div class="field-error" data-error-for="lot_size"></div>
+        </div>
+      </div>
+      <div>
+        {{ form.description.label }}{{ form.description() }}
+        {% for err in form.description.errors %}<div class="field-error">{{ err }}</div>{% endfor %}
+        <div class="field-error" data-error-for="description"></div>
+      </div>
+      <div>
+        {{ form.image.label(class="form-label", for="image-input") }}
+        {{ form.image(id="image-input", class="form-control", multiple=True) }}
+        {% for err in form.image.errors %}<div class="field-error">{{ err }}</div>{% endfor %}
+        <div class="field-error" data-error-for="image"></div>
+      </div>
+      <button class="btn" type="submit">{{ form.submit.label.text }}</button>
+      <div id="predict-error" class="field-error"></div>
+    </form>
+  </div>
+
+  <div class="card stacked" id="react-top">
+    <div class="skeleton-stack">
+      <div class="skeleton-line w-60"></div>
+      <div class="skeleton-line w-90"></div>
+      <div class="skeleton-line w-70"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card history-slab">
+  <div class="history-wrapper" id="react-history">
+    <div class="skeleton-stack">
+      <div class="skeleton-line w-40"></div>
+      <div class="skeleton-line w-80"></div>
+    </div>
+  </div>
+</div>
+
+<div id="confirm-overlay" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <h3>Delete entry?</h3>
+    <p class="muted">This will remove the selected history item.</p>
+    <div class="modal-actions">
+      <button class="pill" id="confirm-cancel">Cancel</button>
+      <button class="pill danger" id="confirm-accept">Delete</button>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast hidden"></div>
+{% endblock %}
+{% block scripts %}
+<script type="text/babel" data-presets="es2015,react">
+  const initialHistory = {{ history_payload|tojson|safe }};
+  const cityOptions = {{ city_options|tojson|safe }};
+  const latestInitial = initialHistory.length ? initialHistory[0] : null;
+  const initialResult = latestInitial
+    ? {
+        predictions: {
+          tabular: latestInitial.tabular_price,
+          nlp: latestInitial.nlp_price,
+          cnn: latestInitial.cnn_price,
+        },
+        final_price: latestInitial.final_price,
+      }
+    : null;
+  {% raw %}
+  // Inline numeric validation for immediate feedback
+  const numericFields = ["bedrooms", "bathrooms", "living_area", "lot_size"];
+  const requiredFields = ["state", "city", "status", ...numericFields];
+  const positiveMessage = "Enter a positive number";
+  const requiredMessage = "This field is required";
+
+  function setFieldError(fieldId, message) {
+    const input = document.getElementById(fieldId);
+    const err = document.querySelector(`.field-error[data-error-for="${fieldId}"]`);
+    if (!input || !err) return;
+    if (message) {
+      input.classList.add("invalid-field");
+      err.textContent = message;
+    } else {
+      input.classList.remove("invalid-field");
+      err.textContent = "";
+    }
+  }
+
+  function validateNumeric(fieldId, requireFilled = false) {
+    const input = document.getElementById(fieldId);
+    if (!input) return true;
+    const raw = input.value;
+    const num = parseFloat(raw);
+    if (!raw) {
+      if (requireFilled) {
+        setFieldError(fieldId, requiredMessage);
+        return false;
+      }
+      setFieldError(fieldId, "");
+      return true;
+    }
+    if (Number.isNaN(num) || num <= 0) {
+      setFieldError(fieldId, positiveMessage);
+      return false;
+    }
+    setFieldError(fieldId, "");
+    return true;
+  }
+
+  function validateSelect(fieldId, requireFilled = false) {
+    const input = document.getElementById(fieldId);
+    if (!input) return true;
+    const val = input.value;
+    if (!val && requireFilled) {
+      setFieldError(fieldId, requiredMessage);
+      return false;
+    }
+    setFieldError(fieldId, "");
+    return true;
+  }
+
+  function attachImmediateValidation() {
+    numericFields.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const handler = () => validateNumeric(id);
+      el.addEventListener("input", handler);
+      el.addEventListener("blur", handler);
+      // Initial check in case browser autofills
+      validateNumeric(id);
+    });
+    ["state", "city", "status"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const handler = () => validateSelect(id);
+      el.addEventListener("change", handler);
+      validateSelect(id);
+    });
+  }
+
+  const tokenEl = document.querySelector('meta[name="csrf-token"]');
+  const csrfToken = tokenEl ? tokenEl.getAttribute('content') : "";
+
+  const fetchHistory = async () => {
+    try {
+      const resp = await fetch("/api/history");
+      if (!resp.ok) {
+        return [];
+      }
+      return await resp.json();
+    } catch (err) {
+      return [];
+    }
+  };
+
+  function formatCurrency(value) {
+    if (value === null || value === undefined) return "-";
+    return "$" + Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 });
+  }
+
+  function PriceTrend({ predictedPrice }) {
+    const [trend, setTrend] = React.useState([]);
+    const [loading, setLoading] = React.useState(true);
+    const chartRef = React.useRef(null);
+    const [error, setError] = React.useState("");
+    const [themeToken, setThemeToken] = React.useState(document.documentElement.dataset.theme || "dark");
+
+    React.useEffect(() => {
+      const load = async () => {
+        setLoading(true);
+        setError("");
+        try {
+          const resp = await fetch("/api/price-trend");
+          if (resp.ok) {
+            const data = await resp.json();
+            setTrend(Array.isArray(data) ? data : []);
+            if (!data || !data.length) {
+              setError("No market data available yet.");
+            }
+          } else {
+            setError("Trend API unavailable.");
+          }
+        } catch (err) {
+          setTrend([]);
+          setError("Failed to load market data.");
+        } finally {
+          setLoading(false);
+        }
+      };
+      load();
+    }, []);
+
+    React.useEffect(() => {
+      const root = document.documentElement;
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((m) => {
+          if (m.attributeName === "data-theme") {
+            setThemeToken(root.dataset.theme || "dark");
+          }
+        });
+      });
+      observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+      return () => observer.disconnect();
+    }, []);
+
+    React.useEffect(() => {
+      if (!window.Plotly || !chartRef.current || !trend.length) return;
+      const rootStyles = getComputedStyle(document.documentElement);
+      const textColor = rootStyles.getPropertyValue("--text").trim() || "#e5e7eb";
+      const mutedColor = rootStyles.getPropertyValue("--muted").trim() || "#94a3b8";
+      const gridColor = rootStyles.getPropertyValue("--stroke").trim() || "rgba(255,255,255,0.08)";
+      const dates = trend.map((d) => d.date);
+      const mean = trend.map((d) => d.mean);
+      const median = trend.map((d) => d.median);
+      const traces = [
+        {
+          x: dates,
+          y: mean,
+          name: "Mean price",
+          mode: "lines",
+          line: { color: "#22d3ee", width: 3 },
+          hovertemplate: "%{x}<br>Mean: $%{y:,.0f}<extra></extra>",
+        },
+        {
+          x: dates,
+          y: median,
+          name: "Median price",
+          mode: "lines",
+          line: { color: "#a855f7", width: 2, dash: "dot" },
+          hovertemplate: "%{x}<br>Median: $%{y:,.0f}<extra></extra>",
+        },
+      ];
+      if (predictedPrice) {
+        const start = dates.length ? dates[0] : new Date().toISOString().slice(0, 10);
+        const end = dates.length ? dates[dates.length - 1] : start;
+        traces.push({
+          x: [start, end],
+          y: [predictedPrice, predictedPrice],
+          name: "Predicted",
+          mode: "lines",
+          line: { color: "#f97316", width: 3, dash: "dash" },
+          hovertemplate: "Predicted<br>$%{y:,.0f}<extra></extra>",
+        });
+      }
+      const layout = {
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: textColor },
+        margin: { l: 60, r: 16, t: 20, b: 50 },
+        yaxis: {
+          zeroline: false,
+          tickprefix: "$",
+          tickformat: "~s",
+          gridcolor: gridColor,
+          title: { text: "Price", font: { color: textColor } },
+        },
+        xaxis: { gridcolor: gridColor, tickfont: { color: textColor }, titlefont: { color: textColor } },
+        legend: {
+          orientation: "h",
+          y: -0.28,
+          x: 0.02,
+          bgcolor: "rgba(0,0,0,0.2)",
+          bordercolor: gridColor,
+          borderwidth: 1,
+          font: { color: textColor },
+        },
+      };
+      window.Plotly.newPlot(chartRef.current, traces, layout, { displayModeBar: false, responsive: true });
+    }, [trend, predictedPrice, themeToken]);
+
+    const latest = trend.length ? trend[trend.length - 1] : null;
+
+    return (
+      <div className="trend-card">
+        <div className="trend-header">
+          <div>
+            <h3>Market trend</h3>
+            <p className="muted">Monthly mean & median price vs. your prediction.</p>
+          </div>
+          {latest && (
+            <div className="trend-stats">
+              <div className="metric-chip">
+                <div className="metric-label">Latest mean</div>
+                <div className="metric-value">{formatCurrency(latest.mean)}</div>
+              </div>
+              <div className="metric-chip">
+                <div className="metric-label">Latest median</div>
+                <div className="metric-value">{formatCurrency(latest.median)}</div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="trend-plot" ref={chartRef}>
+          {!window.Plotly && <p className="muted">Loading chart engine...</p>}
+          {loading && <p className="muted">Loading market data...</p>}
+        {!loading && error && <p className="muted">{error}</p>}
+      </div>
+    </div>
+  );
+  }
+
+  function PriceDistribution({ predictedPrice }) {
+    const [data, setData] = React.useState(null);
+    const [error, setError] = React.useState("");
+    const chartRef = React.useRef(null);
+    const [themeToken, setThemeToken] = React.useState(document.documentElement.dataset.theme || "dark");
+
+    React.useEffect(() => {
+      const load = async () => {
+        setError("");
+        try {
+          const resp = await fetch("/api/price-distribution");
+          if (resp.ok) {
+            const payload = await resp.json();
+            setData(payload);
+            if (!payload || !payload.counts || !payload.edges) {
+              setError("No distribution data available.");
+            }
+          } else {
+            setError("Distribution API unavailable.");
+          }
+        } catch (err) {
+          setError("Failed to load distribution.");
+        }
+      };
+      load();
+    }, []);
+
+    React.useEffect(() => {
+      const root = document.documentElement;
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((m) => {
+          if (m.attributeName === "data-theme") {
+            setThemeToken(root.dataset.theme || "dark");
+          }
+        });
+      });
+      observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+      return () => observer.disconnect();
+    }, []);
+
+    React.useEffect(() => {
+      if (!data || !window.Plotly || !chartRef.current) return;
+      const rootStyles = getComputedStyle(document.documentElement);
+      const textColor = rootStyles.getPropertyValue("--text").trim() || "#e5e7eb";
+      const mutedColor = rootStyles.getPropertyValue("--muted").trim() || "#94a3b8";
+      const gridColor = rootStyles.getPropertyValue("--stroke").trim() || "rgba(255,255,255,0.08)";
+
+      const edges = data.edges || [];
+      const counts = data.counts || [];
+      const centers = [];
+      for (let i = 0; i < edges.length - 1; i++) {
+        centers.push((edges[i] + edges[i + 1]) / 2);
+      }
+      const trace = {
+        x: centers,
+        y: counts,
+        type: "bar",
+        marker: { color: "#22d3ee" },
+        hovertemplate: "Price: $%{x:,.0f}<br>Listings: %{y}<extra></extra>",
+      };
+      const traces = [trace];
+      const shapes = [];
+      const annotations = [];
+      if (predictedPrice) {
+        shapes.push({
+          type: "line",
+          x0: predictedPrice,
+          x1: predictedPrice,
+          y0: 0,
+          y1: Math.max(...counts) * 1.1,
+          line: { color: "#f97316", width: 2, dash: "dash" },
+        });
+        annotations.push({
+          x: predictedPrice,
+          y: Math.max(...counts) * 1.12,
+          text: "Predicted",
+          showarrow: false,
+          font: { color: textColor, size: 12, family: "Manrope, sans-serif" },
+          xanchor: "center",
+        });
+      }
+      const layout = {
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: textColor },
+        margin: { l: 60, r: 10, t: 10, b: 40 },
+        xaxis: {
+          title: { text: "Price", font: { color: textColor } },
+          tickprefix: "$",
+          tickformat: "~s",
+          gridcolor: gridColor,
+          tickfont: { color: textColor },
+        },
+        yaxis: {
+          title: { text: "Listings", font: { color: textColor } },
+          gridcolor: gridColor,
+          tickfont: { color: textColor },
+        },
+        shapes,
+        annotations,
+        showlegend: false,
+      };
+      window.Plotly.newPlot(chartRef.current, traces, layout, { displayModeBar: false, responsive: true });
+    }, [data, predictedPrice, themeToken]);
+
+    return (
+      <div className="trend-card">
+        <div className="trend-header">
+          <div>
+            <h3>Price distribution</h3>
+            <p className="muted">Histogram of recent sale prices.</p>
+          </div>
+        </div>
+        <div className="trend-plot" ref={chartRef}>
+          {error && <p className="muted">{error}</p>}
+          {!error && !data && <p className="muted">Loading distribution...</p>}
+        </div>
+      </div>
+    );
+  }
+
+  function buildBeep() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 520;
+    gain.gain.value = 0.08;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.12);
+  }
+
+  const showToast = (msg) => {
+    const toast = document.getElementById("toast");
+    toast.textContent = msg;
+    toast.classList.remove("hidden");
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.add("hide"), 2000);
+    setTimeout(() => {
+      toast.classList.remove("show", "hide");
+      toast.classList.add("hidden");
+    }, 2600);
+  };
+
+  function ResultCard({ result }) {
+    if (!result) {
+      return (
+        <div className="result-empty">
+          <h2>Realtime output</h2>
+          <p className="muted">Submit a prediction to see the ensemble and per-model prices.</p>
+        </div>
+      );
+    }
+    const preds = result.predictions || {};
+    return (
+      <div className="result-card">
+        <h2>Prediction ready</h2>
+        <p className="muted">Ensemble blends available modalities; CNN uses image brightness cues when provided.</p>
+        <div className="stat-hero">
+          <div className="stat hero">
+            <div className="stat-label">Ensemble</div>
+            <div className="stat-value">{formatCurrency(result.final_price)}</div>
+          </div>
+        </div>
+        <div className="stat-grid stats-contrast trio">
+          <div className="stat">
+            <div className="stat-label">Tabular</div>
+            <div className="stat-value">{formatCurrency(preds.tabular)}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-label">NLP</div>
+            <div className="stat-value">{formatCurrency(preds.nlp)}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-label">Image</div>
+            <div className="stat-value">{formatCurrency(preds.cnn)}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function HistoryTable({ history, onDelete }) {
+    if (!history.length) {
+      return <div className="history-empty">No history yet.</div>;
+    }
+    return (
+      <table className="history-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Final</th>
+            <th>Tab</th>
+            <th>NLP</th>
+            <th>CNN</th>
+            <th>City</th>
+            <th>State</th>
+            <th>Beds</th>
+            <th>Baths</th>
+            <th>Living area</th>
+            <th>Lot acres</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {history.map((row) => {
+            const payload = row.structured_payload || {};
+            return (
+              <tr key={row.id}>
+                <td>
+                  {new Date(row.created_at).toLocaleDateString()}
+                  <br />
+                  {new Date(row.created_at).toLocaleTimeString()}
+                </td>
+                <td>{formatCurrency(row.final_price)}</td>
+                <td>{formatCurrency(row.tabular_price)}</td>
+                <td>{formatCurrency(row.nlp_price)}</td>
+                <td>{formatCurrency(row.cnn_price)}</td>
+                <td>{payload.city || "-"}</td>
+                <td>{payload.state || "-"}</td>
+                <td>{payload.bedrooms !== undefined && payload.bedrooms !== null ? payload.bedrooms : "-"}</td>
+                <td>{payload.bathrooms !== undefined && payload.bathrooms !== null ? payload.bathrooms : "-"}</td>
+                <td>
+                  {payload.living_area !== undefined && payload.living_area !== null
+                    ? payload.living_area
+                    : (payload.house_size !== undefined && payload.house_size !== null ? payload.house_size : "-")}
+                </td>
+                <td>{payload.lot_size !== undefined && payload.lot_size !== null ? payload.lot_size : "-"}</td>
+                <td>
+                  {payload.status
+                    ? payload.status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+                    : "-"}
+                </td>
+                <td>
+                  <button
+                    className="pill link-btn danger"
+                    onClick={() => onDelete(row.id)}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    );
+  }
+
+  function PredictionPane() {
+    const [result, setResult] = React.useState(initialResult);
+    const [loading, setLoading] = React.useState(false);
+    const predictedPrice = result && typeof result.final_price === "number" ? result.final_price : null;
+
+    React.useEffect(() => {
+      gsap.from(".card", { y: 24, opacity: 0, stagger: 0.1, duration: 0.8, ease: "power3.out" });
+    }, []);
+
+    React.useEffect(() => {
+      const handler = (event) => {
+        const latest = event.detail;
+        if (latest) {
+          setResult({
+            predictions: {
+              tabular: latest.tabular_price,
+              nlp: latest.nlp_price,
+              cnn: latest.cnn_price,
+            },
+            final_price: latest.final_price,
+            history_id: latest.id,
+          });
+        } else {
+          setResult(null);
+        }
+      };
+      window.addEventListener("history:latest", handler);
+      return () => window.removeEventListener("history:latest", handler);
+    }, []);
+
+    React.useEffect(() => {
+      const form = document.getElementById("predict-form");
+      const handler = async (event) => {
+        event.preventDefault();
+        const numericValid = numericFields.every((id) => validateNumeric(id, true));
+        const selectValid = ["state", "city", "status"].every((id) => validateSelect(id, true));
+        const allValid = numericValid && selectValid;
+        if (!allValid) {
+          document.getElementById("predict-error").textContent = "Please correct the highlighted fields.";
+          return;
+        }
+        document.getElementById("predict-error").textContent = "";
+        setLoading(true);
+        buildBeep();
+        const formData = new FormData(form);
+        // Replace image list with curated selections (if any)
+        if (window.__selectedImages !== undefined) {
+          formData.delete("image");
+          (window.__selectedImages || []).forEach((file) => formData.append("image", file));
+        }
+        const response = await fetch("/api/predict", {
+          method: "POST",
+          headers: { "X-CSRFToken": csrfToken },
+          body: formData,
+        });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          document.getElementById("predict-error").textContent = data.error || "Prediction failed. Please check inputs.";
+          setLoading(false);
+          return;
+        }
+        const data = await response.json();
+        setResult(data);
+        window.dispatchEvent(new CustomEvent("history:refresh"));
+        setLoading(false);
+      };
+      form.addEventListener("submit", handler);
+      attachImmediateValidation();
+      return () => form.removeEventListener("submit", handler);
+    }, []);
+
+  return (
+      <div className="result-video-grid">
+        <div className="result-stack">
+          <ResultCard result={result} />
+          {loading && <p className="muted">Running ensemble...</p>}
+          <PriceTrend predictedPrice={predictedPrice} />
+          <PriceDistribution predictedPrice={predictedPrice} />
+        </div>
+      </div>
+    );
+  }
+
+  function HistoryPane() {
+    const [history, setHistory] = React.useState(initialHistory || []);
+    const [pendingDelete, setPendingDelete] = React.useState(null);
+
+    const sendLatest = (list) => {
+      const latest = list && list.length ? list[0] : null;
+      window.dispatchEvent(new CustomEvent("history:latest", { detail: latest }));
+    };
+
+    const refreshHistory = async () => {
+      const data = await fetchHistory();
+      setHistory(data);
+      sendLatest(data);
+    };
+
+    React.useEffect(() => {
+      const interval = setInterval(refreshHistory, 30000);
+      const listener = () => refreshHistory();
+      window.addEventListener("history:refresh", listener);
+      refreshHistory();
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener("history:refresh", listener);
+      };
+    }, []);
+
+    React.useEffect(() => {
+      sendLatest(history);
+    }, [history]);
+
+    React.useEffect(() => {
+      const overlay = document.getElementById("confirm-overlay");
+      const cancelBtn = document.getElementById("confirm-cancel");
+      const acceptBtn = document.getElementById("confirm-accept");
+      const close = () => { overlay.classList.add("hidden"); setPendingDelete(null); };
+      if (cancelBtn) cancelBtn.onclick = close;
+      if (acceptBtn) acceptBtn.onclick = async () => {
+        if (pendingDelete) {
+          const resp = await fetch(`/api/history/${pendingDelete}`, {
+            method: "DELETE",
+            headers: { "X-CSRFToken": csrfToken }
+          });
+          if (resp.ok) {
+            await refreshHistory();
+            showToast("History entry deleted");
+          } else {
+            showToast("Delete failed");
+          }
+        }
+        close();
+      };
+      return () => {
+        if (cancelBtn) cancelBtn.onclick = null;
+        if (acceptBtn) acceptBtn.onclick = null;
+      };
+    }, [pendingDelete]);
+
+    const handleDelete = (id) => {
+      const overlay = document.getElementById("confirm-overlay");
+      setPendingDelete(id);
+      overlay.classList.remove("hidden");
+    };
+
+    return (
+      <div className="history-section">
+        <div className="history-header">
+          <div>
+            <h3>Prediction history</h3>
+            <p className="muted">Most recent first. Auto-refreshes every 30 seconds.</p>
+          </div>
+        </div>
+        <HistoryTable history={history} onDelete={handleDelete} />
+      </div>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("react-top")).render(<PredictionPane />);
+  ReactDOM.createRoot(document.getElementById("react-history")).render(<HistoryPane />);
+  {% endraw %}
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const citySelect = document.querySelector('select[name="city"]');
+    const stateSelect = document.querySelector('select[name="state"]');
+    const imageInput = document.getElementById("image-input") || document.querySelector('input[name="image"]');
+    const previewGrid = document.getElementById("image-preview");
+    let selectedFiles = [];
+    window.__selectedImages = selectedFiles;
+    let currentCityPool = cityOptions || [];
+
+    const setCityOptions = (cities, placeholderText = "Select city", preserveValue = "") => {
+      if (!citySelect) return;
+      citySelect.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = placeholderText;
+      citySelect.appendChild(placeholder);
+      (cities || []).forEach((c) => {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.textContent = c.replace(/\b\w/g, (ch) => ch.toUpperCase());
+        citySelect.appendChild(opt);
+      });
+      if (preserveValue && cities.includes(preserveValue)) {
+        citySelect.value = preserveValue;
+      } else {
+        citySelect.value = "";
+      }
+      citySelect.disabled = (cities || []).length === 0;
+    };
+
+    let searchInput = null;
+    if (citySelect && citySelect.parentElement) {
+      searchInput = document.createElement("input");
+      searchInput.type = "text";
+      searchInput.placeholder = "Search city";
+      searchInput.className = "select-search";
+      citySelect.parentElement.insertBefore(searchInput, citySelect);
+    }
+
+    const renderCities = (term = "") => {
+      const lowered = term.trim().toLowerCase();
+      const filtered = lowered
+        ? currentCityPool.filter((c) => c.toLowerCase().includes(lowered))
+        : currentCityPool;
+      const placeholder = stateSelect && stateSelect.value ? "Select city in state" : "Select city";
+      const currentValue = citySelect ? citySelect.value : "";
+      setCityOptions(filtered, placeholder, currentValue || "");
+    };
+
+    const loadCitiesForState = async (stateVal) => {
+      if (!citySelect) return;
+      const state = (stateVal || "").trim();
+      try {
+        if (state) {
+          const resp = await fetch(`/api/cities?state=${encodeURIComponent(state)}`);
+          if (resp.ok) {
+            currentCityPool = await resp.json();
+          }
+        } else {
+          currentCityPool = cityOptions || [];
+        }
+      } catch (err) {
+        currentCityPool = cityOptions || [];
+      }
+      if (searchInput) searchInput.value = "";
+      renderCities();
+    };
+
+    if (stateSelect) {
+      stateSelect.addEventListener("change", (e) => {
+        loadCitiesForState(e.target.value);
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener("input", (e) => {
+        renderCities(e.target.value);
+      });
+    }
+
+    if (citySelect) {
+      citySelect.disabled = true;
+    }
+
+    // Populate cities from initial state (or all) and enable dropdown
+    loadCitiesForState(stateSelect ? stateSelect.value : "");
+
+    const syncInputFiles = () => {
+      if (!imageInput) return;
+      try {
+        const dt = new DataTransfer();
+        selectedFiles.forEach((file) => dt.items.add(file));
+        imageInput.files = dt.files;
+      } catch (err) {
+        // If DataTransfer is unavailable, let the native selection stand; previews stay in selectedFiles.
+      }
+      window.__selectedImages = selectedFiles;
+      if (selectedFiles.length === 0) {
+        imageInput.value = "";
+      }
+    };
+
+    const renderPreviews = () => {
+      if (!previewGrid) return;
+      previewGrid.innerHTML = "";
+      selectedFiles.forEach((file, idx) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "preview-chip";
+
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+        img.alt = file.name;
+        img.onload = () => URL.revokeObjectURL(img.src);
+
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "preview-close";
+        close.innerHTML = "&#10005;";
+        close.addEventListener("click", () => {
+          selectedFiles.splice(idx, 1);
+          syncInputFiles();
+          renderPreviews();
+        });
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(close);
+        previewGrid.appendChild(wrapper);
+      });
+    };
+
+    if (imageInput) {
+      imageInput.addEventListener("change", (e) => {
+        selectedFiles = Array.from(e.target.files || []).filter((f) => f && f.type.startsWith("image/"));
+        renderPreviews();
+        syncInputFiles();
+      });
+    }
+  });
+</script>
+{% endblock %}

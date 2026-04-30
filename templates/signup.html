@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Sign Up - EstateScope AI{% endblock %}
+{% block content %}
+<div class="auth-shell">
+  <div class="auth-visual">
+    <video class="auth-video" autoplay muted loop playsinline>
+      <!-- Place your file at static/uploads/signup-hero.mp4 -->
+      <source src="{{ url_for('static', filename='uploads/signup-hero.mp4') }}" type="video/mp4">
+    </video>
+    <div class="auth-overlay"></div>
+    <div style="position:absolute; inset:0; padding:32px; display:flex; flex-direction:column; justify-content:flex-end; gap:12px; color:#eaf2ff;">
+      <div class="floating-badge">Zero-trust ready</div>
+      <h2 style="margin:0;font-size:26px;">Launch a secure valuation workspace</h2>
+      <p class="muted" style="max-width:440px;">Per-user histories, encrypted credentials, and animated interfaces that feel premium.</p>
+      <div class="tag">Multi-tenant</div>
+      <div class="tag">TensorFlow RNN + CNN</div>
+      <div class="tag">City/zip target encodings</div>
+    </div>
+  </div>
+  <div class="auth-form-card card">
+    <div class="glimmer"></div>
+    <h2>Create an account</h2>
+    <p class="muted">Passwords are hashed; your prediction history stays private.</p>
+    <form method="post">
+      {{ form.hidden_tag() }}
+      <div>
+        {{ form.username.label }}<br>
+        {{ form.username(size=32) }}
+        {% for error in form.username.errors %}<div class="flash flash-danger">{{ error }}</div>{% endfor %}
+      </div>
+      <div>
+        {{ form.email.label }}<br>
+        {{ form.email(size=32) }}
+        {% for error in form.email.errors %}<div class="flash flash-danger">{{ error }}</div>{% endfor %}
+      </div>
+      <div>
+        {{ form.password.label }}<br>
+        {{ form.password(size=32) }}
+        {% for error in form.password.errors %}<div class="flash flash-danger">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="terms-row">
+        <label class="terms-box">
+          {{ form.terms() }}
+          <span>I agree to the <a href="#" class="terms-link" data-doc="terms">Terms</a> and <a href="#" class="terms-link" data-doc="privacy">Privacy</a>.</span>
+        </label>
+      </div>
+      {% for error in form.terms.errors %}<div class="flash flash-danger">{{ error }}</div>{% endfor %}
+      <button class="btn" type="submit">{{ form.submit.label.text }}</button>
+    </form>
+    <p class="muted" style="margin-top:12px; text-align:center;">Already registered? <a class="footer-link" href="{{ url_for('main.login') }}">Login</a></p>
+  </div>
+</div>
+<div id="doc-modal" class="doc-modal">
+  <div class="doc-modal__content card">
+    <div class="doc-modal__header">
+      <h3 id="doc-title">Document</h3>
+      <div class="doc-modal__actions">
+        <a id="doc-download" class="btn" href="#" download>Download</a>
+        <button id="doc-close" class="pill" type="button">Close</button>
+      </div>
+    </div>
+    <iframe id="doc-frame" title="Document preview"></iframe>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  gsap.from(".auth-form-card", { x: 30, opacity: 0, duration: 1, ease: "power3.out" });
+  gsap.from(".auth-visual", { x: -30, opacity: 0, duration: 1, ease: "power3.out" });
+  const links = document.querySelectorAll(".terms-link");
+  const modal = document.getElementById("doc-modal");
+  const frame = document.getElementById("doc-frame");
+  const download = document.getElementById("doc-download");
+  const title = document.getElementById("doc-title");
+  const closeBtn = document.getElementById("doc-close");
+
+  const docs = {
+    terms: "{{ url_for('static', filename='uploads/terms.pdf') }}",
+    privacy: "{{ url_for('static', filename='uploads/privacy.pdf') }}",
+  };
+
+  links.forEach((link) => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      const key = link.dataset.doc;
+      const src = docs[key];
+      frame.src = src;
+      download.href = src;
+      title.textContent = key === "terms" ? "Terms & Conditions" : "Privacy Policy";
+      modal.style.display = "flex";
+    });
+  });
+
+  closeBtn.addEventListener("click", () => {
+    modal.style.display = "none";
+    frame.src = "";
+  });
+</script>
+{% endblock %}

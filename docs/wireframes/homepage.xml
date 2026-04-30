@@ -1,0 +1,216 @@
+﻿<mxfile host="app.diagrams.net" modified="2025-12-07T10:30:00Z" agent="ChatGPT" version="22.0.0">
+  <diagram id="homepage" name="Homepage">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Top navigation bar -->
+        <mxCell id="nav-bar" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="1600" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="nav-logo" value="EstateScope AI" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="15" width="220" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="nav-predict" value="Predict" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="15" width="80" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="nav-logout" value="Logout" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="1290" y="15" width="80" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="nav-theme-toggle" value="Dark / Light" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#999999;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="1390" y="15" width="140" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Page background -->
+        <mxCell id="bg" value="" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="0" y="60" width="1600" height="840" as="geometry"/>
+        </mxCell>
+
+        <!-- HERO SECTION -->
+        <mxCell id="hero-section" value="" style="swimlane;rounded=1;html=1;startSize=0;fillColor=#ffffff;strokeColor=#cccccc;" vertex="1" parent="1">
+          <mxGeometry x="80" y="90" width="1440" height="320" as="geometry"/>
+        </mxCell>
+
+        <!-- Hero left content -->
+        <mxCell id="hero-pill" value="US housing intelligence" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f0f0f0;align=center;verticalAlign=middle;" vertex="1" parent="hero-section">
+          <mxGeometry x="40" y="30" width="220" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="hero-title" value="Multimodal valuations for US listings built on tabular, text, and image signals." style="text;html=1;whiteSpace=wrap;strokeColor=none;fontStyle=1;fontSize=22;" vertex="1" parent="hero-section">
+          <mxGeometry x="40" y="70" width="520" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="hero-body" value="Structured model + text head + image head. Copy explaining how the valuation system works." style="text;html=1;whiteSpace=wrap;strokeColor=none;" vertex="1" parent="hero-section">
+          <mxGeometry x="40" y="200" width="520" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Hero right: How it works card -->
+        <mxCell id="hero-how-card" value="" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f9f9f9;" vertex="1" parent="hero-section">
+          <mxGeometry x="600" y="30" width="780" height="260" as="geometry"/>
+        </mxCell>
+        <mxCell id="hero-how-title" value="How it works" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontStyle=1;" vertex="1" parent="hero-section">
+          <mxGeometry x="620" y="40" width="200" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="hero-how-body" value="Short explanation of tabular, text, and image heads; ensemble blending logic, etc." style="text;html=1;whiteSpace=wrap;strokeColor=none;" vertex="1" parent="hero-section">
+          <mxGeometry x="620" y="70" width="740" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Hero how: 3 pill rows -->
+        <mxCell id="hero-how-pill1" value="Beds / Baths / House size / Lot acres" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" vertex="1" parent="hero-section">
+          <mxGeometry x="620" y="160" width="740" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="hero-how-pill2" value="City / State cleans + status flags" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" vertex="1" parent="hero-section">
+          <mxGeometry x="620" y="204" width="740" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="hero-how-pill3" value="Ratios + log1p transforms" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" vertex="1" parent="hero-section">
+          <mxGeometry x="620" y="248" width="740" height="36" as="geometry"/>
+        </mxCell>
+
+        <!-- CTA: Open predictor button (under hero) -->
+        <mxCell id="open-predictor-btn" value="Open predictor" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#00bcd4;fillColor=#e0f7fa;align=center;verticalAlign=middle;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="430" width="160" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- WHAT TO PROVIDE SECTION -->
+        <mxCell id="provide-section" value="" style="swimlane;rounded=1;html=1;startSize=40;fillColor=#ffffff;strokeColor=#cccccc;" vertex="1" parent="1">
+          <mxGeometry x="80" y="490" width="1440" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="provide-title" value="What to provide" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontStyle=1;" vertex="1" parent="provide-section">
+          <mxGeometry x="20" y="10" width="300" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="provide-subtitle" value="Enter basic listing details; the app handles the feature engineering behind the scenes." style="text;html=1;whiteSpace=wrap;strokeColor=none;" vertex="1" parent="provide-section">
+          <mxGeometry x="20" y="40" width="800" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- 4 cards horizontally -->
+        <mxCell id="provide-card1" value="Location&#xa;City, state, ZIP to ground the valuation." style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f9f9f9;" vertex="1" parent="provide-section">
+          <mxGeometry x="20" y="90" width="330" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="provide-card2" value="Home basics&#xa;Beds, baths, living area, lot size, year built, status." style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f9f9f9;" vertex="1" parent="provide-section">
+          <mxGeometry x="370" y="90" width="330" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="provide-card3" value="Parking&#xa;Garage / parking details if available." style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f9f9f9;" vertex="1" parent="provide-section">
+          <mxGeometry x="720" y="90" width="330" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="provide-card4" value="Optional boosts&#xa;Listing description and an image for text / CNN heads." style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f9f9f9;" vertex="1" parent="provide-section">
+          <mxGeometry x="1070" y="90" width="330" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- REGIONAL SNAPSHOTS SECTION -->
+        <mxCell id="regional-section" value="" style="swimlane;rounded=1;html=1;startSize=40;fillColor=#ffffff;strokeColor=#cccccc;" vertex="1" parent="1">
+          <mxGeometry x="80" y="730" width="1440" height="260" as="geometry"/>
+        </mxCell>
+        <mxCell id="regional-title" value="Regional snapshots" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontStyle=1;" vertex="1" parent="regional-section">
+          <mxGeometry x="20" y="10" width="300" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="regional-subtitle" value="Drop in photos for regional cues; these slots are placeholders for US regional imagery." style="text;html=1;whiteSpace=wrap;strokeColor=none;" vertex="1" parent="regional-section">
+          <mxGeometry x="20" y="40" width="900" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- 3 image cards -->
+        <mxCell id="regional-card1" value="West Coast&#xa;High land value, higher tax in metros, strong condo/townhome mix." style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f9f9f9;" vertex="1" parent="regional-section">
+          <mxGeometry x="20" y="80" width="430" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="regional-card2" value="Sun Belt&#xa;Fast inventory turnover, newer builds, larger lots and garages." style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f9f9f9;" vertex="1" parent="regional-section">
+          <mxGeometry x="505" y="80" width="430" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="regional-card3" value="Northeast&#xa;Older stock, premium school districts, tighter lot sizes in metros." style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f9f9f9;" vertex="1" parent="regional-section">
+          <mxGeometry x="990" y="80" width="430" height="160" as="geometry"/>
+        </mxCell>
+
+        <!-- SECOND VIEWPORT (SCROLL) CONTENT -->
+        <!-- Market momentum & absorption -->
+        <mxCell id="market-section" value="" style="swimlane;rounded=1;html=1;startSize=0;fillColor=#ffffff;strokeColor=#cccccc;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1020" width="1440" height="260" as="geometry"/>
+        </mxCell>
+        <mxCell id="market-img" value="Image placeholder" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f5f5f5;align=center;verticalAlign=middle;" vertex="1" parent="market-section">
+          <mxGeometry x="20" y="20" width="660" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="market-text-card" value="" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f9f9f9;" vertex="1" parent="market-section">
+          <mxGeometry x="740" y="20" width="680" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="market-title" value="Market momentum &amp; absorption" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontStyle=1;" vertex="1" parent="market-section">
+          <mxGeometry x="760" y="30" width="300" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="market-body" value="Copy about priors: city/zip average price, listing density, days on market, etc." style="text;html=1;whiteSpace=wrap;strokeColor=none;" vertex="1" parent="market-section">
+          <mxGeometry x="760" y="60" width="640" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="market-pill1" value="Inventory velocity" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" vertex="1" parent="market-section">
+          <mxGeometry x="760" y="130" width="640" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="market-pill2" value="Price-per-sqft priors" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" vertex="1" parent="market-section">
+          <mxGeometry x="760" y="168" width="640" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="market-pill3" value="List vs sale deltas" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" vertex="1" parent="market-section">
+          <mxGeometry x="760" y="206" width="640" height="32" as="geometry"/>
+        </mxCell>
+
+        <!-- Neighborhood texture -->
+        <mxCell id="neigh-section" value="" style="swimlane;rounded=1;html=1;startSize=0;fillColor=#ffffff;strokeColor=#cccccc;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1300" width="1440" height="260" as="geometry"/>
+        </mxCell>
+        <mxCell id="neigh-text-card" value="" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f9f9f9;" vertex="1" parent="neigh-section">
+          <mxGeometry x="20" y="20" width="680" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="neigh-title" value="Neighborhood texture" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontStyle=1;" vertex="1" parent="neigh-section">
+          <mxGeometry x="40" y="30" width="300" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="neigh-body" value="Explains how images and descriptions inform curb appeal, upgrades, and ratios." style="text;html=1;whiteSpace=wrap;strokeColor=none;" vertex="1" parent="neigh-section">
+          <mxGeometry x="40" y="60" width="640" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="neigh-pill1" value="Curb appeal brightness" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" vertex="1" parent="neigh-section">
+          <mxGeometry x="40" y="130" width="640" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="neigh-pill2" value="Upgrade phrases" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" vertex="1" parent="neigh-section">
+          <mxGeometry x="40" y="168" width="640" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="neigh-pill3" value="Lot vs living ratios" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" vertex="1" parent="neigh-section">
+          <mxGeometry x="40" y="206" width="640" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="neigh-img" value="Image placeholder" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f5f5f5;align=center;verticalAlign=middle;" vertex="1" parent="neigh-section">
+          <mxGeometry x="740" y="20" width="680" height="220" as="geometry"/>
+        </mxCell>
+
+        <!-- Auditability & history -->
+        <mxCell id="audit-section" value="" style="swimlane;rounded=1;html=1;startSize=0;fillColor=#ffffff;strokeColor=#cccccc;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1580" width="1440" height="260" as="geometry"/>
+        </mxCell>
+        <mxCell id="audit-img" value="Image placeholder" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f5f5f5;align=center;verticalAlign=middle;" vertex="1" parent="audit-section">
+          <mxGeometry x="20" y="20" width="680" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="audit-text-card" value="" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#f9f9f9;" vertex="1" parent="audit-section">
+          <mxGeometry x="740" y="20" width="680" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="audit-title" value="Auditability &amp; history" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontStyle=1;" vertex="1" parent="audit-section">
+          <mxGeometry x="760" y="30" width="300" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="audit-body" value="Every prediction is stored with modality breakdowns; use history to understand variance and refine inputs." style="text;html=1;whiteSpace=wrap;strokeColor=none;" vertex="1" parent="audit-section">
+          <mxGeometry x="760" y="60" width="640" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="audit-pill1" value="Per-user histories" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" vertex="1" parent="audit-section">
+          <mxGeometry x="760" y="130" width="640" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="audit-pill2" value="Modality breakdowns" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" vertex="1" parent="audit-section">
+          <mxGeometry x="760" y="168" width="640" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="audit-pill3" value="WTForms validation + auth" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=middle;" vertex="1" parent="audit-section">
+          <mxGeometry x="760" y="206" width="640" height="32" as="geometry"/>
+        </mxCell>
+
+        <!-- FOOTER -->
+        <mxCell id="footer" value="" style="swimlane;rounded=0;html=1;startSize=0;fillColor=#111111;strokeColor=#000000;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="0" y="1860" width="1600" height="140" as="geometry"/>
+        </mxCell>
+        <mxCell id="footer-brand" value="EstateScope AI&#xa;Multimodal US housing valuations - structured, text, and vision in one ensemble." style="text;html=1;whiteSpace=wrap;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="footer">
+          <mxGeometry x="120" y="20" width="420" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="footer-contact" value="Contact&#xa;Name / Student ID&#xa;ORCID ID" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="footer">
+          <mxGeometry x="640" y="20" width="320" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="footer-app" value="App&#xa;Predict&#xa;Sign up&#xa;Login" style="text;html=1;whiteSpace=wrap;strokeColor=none;fontColor=#ffffff;" vertex="1" parent="footer">
+          <mxGeometry x="1100" y="20" width="200" height="80" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

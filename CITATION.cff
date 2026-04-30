@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use or review this academic project, please cite it using this metadata."
+title: "EstateScope AI: Multimodal Housing Valuation Platform"
+version: "1.0.0"
+date-released: "2026-05-01"
+authors:
+  - family-names: "Goh"
+    given-names: "Kun Ming"
+    affiliation: "Singapore Polytechnic, School of Computing"
+abstract: "A Flask-based multimodal US housing valuation and MLOps project for Singapore Polytechnic ST1516 CA1."
+license: "MIT"
+keywords:
+  - "MLOps"
+  - "Flask"
+  - "housing valuation"
+  - "DevOps"
+  - "machine learning"

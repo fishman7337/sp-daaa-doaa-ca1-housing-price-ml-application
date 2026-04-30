@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}EstateScope AI{% endblock %}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='uploads/favicorn.png') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://unpkg.com/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+</head>
+<body>
+  <div class="theme-swipe"></div>
+  <div class="entry-veil"></div>
+  <div class="bg-pattern"></div>
+  <div class="aurora"></div>
+  <header class="nav">
+    <a class="brand" href="{{ url_for('main.index') }}">EstateScope<span>AI</span></a>
+    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
+    <nav class="nav-links">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('main.dashboard') }}">Predict</a>
+        <a href="{{ url_for('main.logout') }}">Logout</a>
+      {% else %}
+        <a href="{{ url_for('main.login') }}">Login</a>
+        <a class="pill" href="{{ url_for('main.signup') }}">Sign up</a>
+      {% endif %}
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+        <span class="theme-label theme-label-dark">Dark</span>
+        <span class="theme-label theme-label-light">Light</span>
+        <span class="theme-knob"></span>
+      </button>
+    </nav>
+  </header>
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  {% if current_user.is_authenticated %}
+  <div id="chat-widget">
+    <button id="chat-toggle" aria-label="Open chat">
+      <span class="chat-icon">Chat</span>
+    </button>
+    <div id="chat-panel" class="hidden">
+      <div class="chat-header">
+        <div>
+          <div class="chat-title">Ask about housing</div>
+          <div class="chat-subtitle">Housing helper (pricing, comps, listings, mortgages)</div>
+        </div>
+        <button id="chat-close" aria-label="Close chat">x</button>
+      </div>
+      <div id="chat-messages"></div>
+      <form id="chat-form">
+        <input type="text" id="chat-input" placeholder="Ask about prices, comps, images..." autocomplete="off" />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+  <footer class="footer">
+    <div>
+      <div class="brand">EstateScope<span>AI</span></div>
+      <p class="muted">Multimodal US housing valuations - structured, text, and vision in one ensemble.</p>
+    </div>
+    <div>
+      <div class="muted">Contact</div>
+      <div class="footer-link">{{ "Goh Kun Ming" }} | {{ "P2415691" }}</div>
+      <a class="footer-link" href="https://orcid.org/0009-0008-7666-781X" target="_blank" rel="noopener">ORCiD: 0009-0008-7666-781X</a>
+    </div>
+    <div>
+      <div class="muted">App</div>
+      <a class="footer-link" href="{{ url_for('main.dashboard') }}">Predict</a>
+      <a class="footer-link" href="{{ url_for('main.signup') }}">Sign up</a>
+      <a class="footer-link" href="{{ url_for('main.login') }}">Login</a>
+    </div>
+  </footer>
+  <script>
+    const veil = document.querySelector(".entry-veil");
+    const swipe = document.querySelector(".theme-swipe");
+    const body = document.body;
+    const root = document.documentElement;
+    const storedTheme = localStorage.getItem("theme") || "dark";
+    root.dataset.theme = storedTheme;
+    body.dataset.theme = storedTheme;
+
+    if (veil) {
+      gsap.fromTo(
+        veil,
+        { scaleY: 1 },
+        { scaleY: 0, duration: 1.2, ease: "power4.inOut", transformOrigin: "top" }
+      );
+    }
+    gsap.from(".nav", { y: -20, opacity: 0, duration: 0.8, ease: "power3.out", delay: 0.2 });
+    gsap.from("main", { opacity: 0, duration: 1.1, delay: 0.35, ease: "power2.out" });
+    gsap.to(".aurora", { opacity: 1, duration: 1.2, ease: "power1.out", delay: 0.2 });
+
+    // Parallax hover for hero visuals
+    window.addEventListener("mousemove", (e) => {
+      const { innerWidth: w, innerHeight: h } = window;
+      const x = (e.clientX - w / 2) / w;
+      const y = (e.clientY - h / 2) / h;
+      gsap.to(".hero-visual", { x: x * 16, y: y * 16, duration: 0.6, ease: "power2.out" });
+    });
+
+    // Intersection reveal for scrolling sections
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add("visible");
+        });
+      },
+      { threshold: 0.2 }
+    );
+    document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
+
+    // Theme toggle with swipe animation
+    const toggleBtn = document.getElementById("theme-toggle");
+    if (toggleBtn) {
+      toggleBtn.addEventListener("click", () => {
+        if (swipe) {
+          gsap.fromTo(swipe, { x: "100%" }, { x: "-100%", duration: 0.6, ease: "power2.inOut", onComplete: () => { swipe.style.transform = "translateX(100%)"; } });
+        }
+        const next = root.dataset.theme === "light" ? "dark" : "light";
+        root.dataset.theme = next;
+        body.dataset.theme = next;
+        localStorage.setItem("theme", next);
+      });
+    }
+
+    // Nav toggle for mobile
+    const navToggle = document.querySelector(".nav-toggle");
+    const navLinks = document.querySelector(".nav-links");
+    if (navToggle && navLinks) {
+      navToggle.addEventListener("click", () => {
+        const open = navLinks.classList.toggle("open");
+        navToggle.setAttribute("aria-expanded", String(open));
+      });
+    }
+
+    // Chat widget (user-scoped; history stored server-side)
+    (() => {
+      const chatToggle = document.getElementById("chat-toggle");
+      const chatPanel = document.getElementById("chat-panel");
+      const chatClose = document.getElementById("chat-close");
+      const chatMessages = document.getElementById("chat-messages");
+      const chatForm = document.getElementById("chat-form");
+      const chatInput = document.getElementById("chat-input");
+      const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+      const csrf = csrfMeta ? csrfMeta.getAttribute("content") : "";
+
+      // No widget rendered when logged out.
+      if (!chatToggle || !chatPanel || !chatMessages || !chatForm || !chatInput) return;
+
+      let chatHistory = [];
+      let isFetchingHistory = false;
+
+      const renderHistory = () => {
+        chatMessages.innerHTML = "";
+        chatHistory.forEach((msg) => {
+          const div = document.createElement("div");
+          div.className = `chat-bubble ${msg.role === "user" ? "user" : "bot"}`;
+          div.textContent = msg.content;
+          chatMessages.appendChild(div);
+        });
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      };
+
+      const fetchHistory = async () => {
+        if (isFetchingHistory) return;
+        isFetchingHistory = true;
+        try {
+          const resp = await fetch("/api/chat/history", { headers: { "X-CSRFToken": csrf } });
+          if (!resp.ok) throw new Error("history load failed");
+          chatHistory = await resp.json();
+          renderHistory();
+        } catch (err) {
+          // ignore fetch errors for history
+        } finally {
+          isFetchingHistory = false;
+        }
+      };
+
+      const addThinking = () => {
+        chatHistory.push({ role: "assistant", content: "Thinking..." });
+        renderHistory();
+        return chatHistory.length - 1;
+      };
+
+      const removeThinking = (index) => {
+        if (index >= 0 && index < chatHistory.length && chatHistory[index].content === "Thinking...") {
+          chatHistory.splice(index, 1);
+          renderHistory();
+        }
+      };
+
+      chatToggle.addEventListener("click", () => {
+        chatPanel.classList.toggle("hidden");
+        if (!chatPanel.classList.contains("hidden")) {
+          fetchHistory();
+          chatInput.focus();
+        }
+      });
+      chatClose.addEventListener("click", () => chatPanel.classList.add("hidden"));
+
+      chatForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const text = (chatInput.value || "").trim();
+        if (!text) return;
+        chatHistory.push({ role: "user", content: text });
+        renderHistory();
+        chatInput.value = "";
+        const thinkingIndex = addThinking();
+
+        try {
+          const resp = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrf,
+            },
+            body: JSON.stringify({ message: text }),
+          });
+          const data = await resp.json();
+          removeThinking(thinkingIndex);
+          const reply = data && data.reply ? data.reply : "Sorry, I couldn't process that.";
+          chatHistory.push({ role: "assistant", content: reply });
+          renderHistory();
+          fetchHistory(); // sync ordering from server
+        } catch (err) {
+          removeThinking(thinkingIndex);
+          chatHistory.push({ role: "assistant", content: "Connection problem. Please try again." });
+          renderHistory();
+        }
+      });
+    })();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
