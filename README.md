@@ -11,7 +11,7 @@ This project was completed for Singapore Polytechnic, School of Computing, Diplo
 | Evidence-backed measure | Current repository evidence |
 | --- | --- |
 | Modalities | The Flask prototype can combine **3 signal types**: structured attributes, optional text features, and optional image-CNN features. |
-| Verification surface | **61 tests** pass at **55.60%** coverage; the non-root Linux image is healthy, serves HTTP 200, and was reduced by **523,760,592 bytes (37.0%)** to **892,109,052 bytes**. |
+| Verification surface | **62 tests** pass at **55.60%** coverage; the non-root Linux image is healthy, serves HTTP 200, and was reduced by **523,760,592 bytes (37.0%)** to **892,109,052 bytes**. |
 | Reproducible held-out result | The committed NLP evaluator records **1,517 samples**, MAE **$157,378.25**, RMSE **$311,910.03**, and R² **0.4404**. |
 
 The qualitative outcome is a multimodal property-price prototype with authentication, history, trend APIs, and Docker/local operation. The NLP result is component-specific; uncommitted tabular/CNN held-out sets prevent a valid claim that multimodality improves accuracy or that the system is production-deployed.
@@ -95,7 +95,7 @@ python scripts/check_project.py --ci
 python -m pytest
 ```
 
-The pytest suite covers authentication, prediction validation, history isolation, chat guardrails, route behavior, serialization, and compatibility of all three deployed model artifacts. The current suite contains 61 tests and enforces at least 55% statement coverage for the Flask package.
+The pytest suite covers authentication, prediction validation, history isolation, chat guardrails, route behavior, safe local-server defaults, serialization, and compatibility of all three deployed model artifacts. The current suite contains 62 tests and enforces at least 55% statement coverage for the Flask package.
 
 The committed NLP model was re-evaluated on 1,517 held-out examples with TensorFlow CPU 2.21.0: MAE **$157,378.25**, RMSE **$311,910.03**, and R² **0.4404**. Reproduce the result with `python scripts/evaluate_nlp_model.py`; full provenance is in `reports/metrics/nlp-metrics.json`.
 
