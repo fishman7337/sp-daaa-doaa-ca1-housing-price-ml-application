@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-from io import BytesIO
-
-import pytest
-
 
 def _signup_and_login(client, username: str = "histuser") -> None:
     """Create an account and log in."""
@@ -68,7 +64,10 @@ def test_history_list_and_delete(client, monkeypatch) -> None:
 
     class DummyService:
         def __init__(self):
-            self.listing_counts = {"state_to_cities": {"tx": {"austin": 1}}, "state_listing_count": {"tx": 1}}
+            self.listing_counts = {
+                "state_to_cities": {"tx": {"austin": 1}},
+                "state_listing_count": {"tx": 1},
+            }
 
         def predict(self, structured_payload=None, description=None, image_paths=None):
             return {"tabular": 222000.0}, 222000.0
@@ -111,7 +110,10 @@ def test_history_is_user_isolated(client, monkeypatch) -> None:
 
     class DummyService:
         def __init__(self):
-            self.listing_counts = {"state_to_cities": {"tx": {"austin": 1}}, "state_listing_count": {"tx": 1}}
+            self.listing_counts = {
+                "state_to_cities": {"tx": {"austin": 1}},
+                "state_listing_count": {"tx": 1},
+            }
 
         def predict(self, structured_payload=None, description=None, image_paths=None):
             return {"tabular": 210000.0}, 210000.0

@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from io import BytesIO
 
-import pytest
-
 from app.extensions import db
 from app.models import Prediction, User
 
@@ -31,7 +29,10 @@ def _login_with_stub(client, monkeypatch, username: str = "persist"):
 
     class DummyService:
         def __init__(self):
-            self.listing_counts = {"state_to_cities": {"tx": {"austin": 1}}, "state_listing_count": {"tx": 1}}
+            self.listing_counts = {
+                "state_to_cities": {"tx": {"austin": 1}},
+                "state_listing_count": {"tx": 1},
+            }
 
         def predict(self, structured_payload=None, description=None, image_paths=None):
             return {"tabular": 505000.0}, 505000.0

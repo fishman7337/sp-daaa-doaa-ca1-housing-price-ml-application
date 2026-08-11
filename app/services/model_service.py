@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 import joblib
 import numpy as np
@@ -18,7 +17,6 @@ os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 
 def _require_tensorflow():
     """Import TensorFlow only when a TensorFlow-backed modality is used."""
-
     try:
         import tensorflow as tf
     except Exception as exc:  # noqa: BLE001
@@ -32,7 +30,6 @@ def _require_tensorflow():
 
 def _keras_text_tools():
     """Return Keras text helpers from the active TensorFlow installation."""
-
     tf = _require_tensorflow()
     return (
         tf.keras.preprocessing.text.Tokenizer,
@@ -50,6 +47,13 @@ class ModelService:
         upload_dir: Path,
         nlp_processed_csv: Path = Path("nlp_data/processed/nlp_text_cleaned.csv"),
     ) -> None:
+        """Initialize artifact paths and lazy model state.
+
+        Args:
+            model_dir: Directory containing deployed model artifacts.
+            upload_dir: Directory used for uploaded property images.
+            nlp_processed_csv: Cleaned listing text used to rebuild a tokenizer if needed.
+        """
         self.model_dir = Path(model_dir)
         self.upload_dir = Path(upload_dir)
         self.nlp_processed_csv = nlp_processed_csv
@@ -80,9 +84,8 @@ class ModelService:
             self._tabular_model = joblib.load(self.tabular_path)
         return self._tabular_model
 
-    def predict_tabular(self, structured_payload: Dict[str, object]) -> float:
+    def predict_tabular(self, structured_payload: dict[str, object]) -> float:
         """Predict price using tabular data."""
-
         model = self._load_tabular_model()
         df_row = engineer_minimal_from_payload(
             structured_payload,
@@ -95,14 +98,11 @@ class ModelService:
     # ------------------------------------------------------------------
     def _train_nlp_model(self) -> None:
         """Train a Bidirectional RNN on cleaned descriptions."""
-
         tf = _require_tensorflow()
         Tokenizer, _, pad_sequences = _keras_text_tools()
 
         if not self.nlp_processed_csv.exists():
-            raise FileNotFoundError(
-                f"Processed NLP CSV not found at {self.nlp_processed_csv}."
-            )
+            raise FileNotFoundError(f"Processed NLP CSV not found at {self.nlp_processed_csv}.")
 
         data = pd.read_csv(self.nlp_processed_csv)
         text_col = "description_clean" if "description_clean" in data else "description"
@@ -130,9 +130,7 @@ class ModelService:
 
         inputs = tf.keras.Input(shape=(max_len,), name="text_input")
         x = tf.keras.layers.Embedding(max_words, 64)(inputs)
-        x = tf.keras.layers.Bidirectional(
-            tf.keras.layers.GRU(64, return_sequences=True)
-        )(x)
+        x = tf.keras.layers.Bidirectional(tf.keras.layers.GRU(64, return_sequences=True))(x)
         x = tf.keras.layers.GlobalAveragePooling1D()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
         x = tf.keras.layers.Dense(64, activation="relu")(x)
@@ -176,7 +174,6 @@ class ModelService:
 
     def predict_nlp(self, description: str) -> float:
         """Predict price from a textual description."""
-
         if not description:
             raise ValueError("Description is empty.")
         tokenizer = self._load_tokenizer()
@@ -192,7 +189,6 @@ class ModelService:
     # ------------------------------------------------------------------
     def _default_price_anchor(self) -> float:
         """Return a stable median-like price anchor for synthetic CNN fallback data."""
-
         candidates = [
             self.model_dir.parent / "data" / "usa_real_estate_price_histogram.csv",
             Path("data/usa_real_estate_price_histogram.csv"),
@@ -214,7 +210,6 @@ class ModelService:
 
     def _train_cnn_model(self) -> None:
         """Train a small CNN on synthetic brightness data."""
-
         tf = _require_tensorflow()
         tf.random.set_seed(42)
         med_price = self._default_price_anchor()
@@ -273,10 +268,9 @@ class ModelService:
     @staticmethod
     def _get_cnn_target_size(model) -> tuple[int, int]:
         """Infer target size from the model input; default to 224x224 if unknown."""
-
         try:
             shape = model.input_shape
-            if isinstance(shape, (list, tuple)) and len(shape) == 4:
+            if isinstance(shape, list | tuple) and len(shape) == 4:
                 h, w = shape[1], shape[2]
                 if h and w and h > 0 and w > 0:
                     return (int(h), int(w))
@@ -286,7 +280,6 @@ class ModelService:
 
     def predict_image(self, image_path: Path) -> float:
         """Predict price using the CNN model from an uploaded image."""
-
         tf = _require_tensorflow()
         model = self._load_cnn_model()
         target_size = self._get_cnn_target_size(model)
@@ -300,13 +293,12 @@ class ModelService:
     # ------------------------------------------------------------------
     def predict(
         self,
-        structured_payload: Optional[Dict[str, object]] = None,
-        description: Optional[str] = None,
-        image_paths: Optional[List[Path]] = None,
-    ) -> Tuple[Dict[str, float], float]:
+        structured_payload: dict[str, object] | None = None,
+        description: str | None = None,
+        image_paths: list[Path] | None = None,
+    ) -> tuple[dict[str, float], float]:
         """Run available modalities and return per-model + ensemble prices."""
-
-        predictions: Dict[str, float] = {}
+        predictions: dict[str, float] = {}
         if structured_payload:
             try:
                 predictions["tabular"] = float(self.predict_tabular(structured_payload))

@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from io import BytesIO
 
-import pytest
-
 
 def _login_with_counts(client, monkeypatch):
     """Register/login and stub model service with listing counts."""

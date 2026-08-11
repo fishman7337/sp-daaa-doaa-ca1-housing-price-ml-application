@@ -32,3 +32,6 @@ Set these environment variables in the platform dashboard:
 - Database is migrated or initialized.
 - Upload directory is writable.
 - Monitoring and rollback plan are documented.
+- `docker inspect --format='{{.State.Health.Status}}' <container>` reaches `healthy`.
+
+The image runs as the non-root `appuser` (UID 10001) and declares a health check against the public landing route. The `instance/` and `static/uploads/` directories remain writable for SQLite and user uploads.

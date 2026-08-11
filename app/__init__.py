@@ -21,6 +21,7 @@ def create_app(config_override: dict | None = None) -> Flask:
 
     Returns:
         Configured Flask application instance.
+
     """
     base_dir = Path(__file__).resolve().parent.parent
     templates = base_dir / "templates"

@@ -9,14 +9,13 @@ from flask_wtf.file import FileAllowed, MultipleFileField
 from wtforms import (
     BooleanField,
     FloatField,
-    IntegerField,
     PasswordField,
+    SelectField,
     StringField,
     SubmitField,
     TextAreaField,
 )
-from wtforms import SelectField
-from wtforms.validators import Email, InputRequired, Length, Optional, NumberRange
+from wtforms.validators import Email, InputRequired, Length, NumberRange, Optional
 
 
 class LoginForm(FlaskForm):
@@ -92,9 +91,7 @@ class PredictionForm(FlaskForm):
             NumberRange(min=0.0001, message="Enter a positive number"),
         ],
     )
-    description = TextAreaField(
-        "Description", validators=[Optional(), Length(max=5000)]
-    )
+    description = TextAreaField("Description", validators=[Optional(), Length(max=5000)])
     image = MultipleFileField(
         "Property Image",
         validators=[Optional(), FileAllowed(["jpg", "jpeg", "png", "webp"])],
@@ -104,7 +101,6 @@ class PredictionForm(FlaskForm):
 
     def validate(self, extra_validators: Any | None = None) -> bool:
         """Require all structured fields; description/images remain optional."""
-
         return super().validate(extra_validators=extra_validators)
 
 

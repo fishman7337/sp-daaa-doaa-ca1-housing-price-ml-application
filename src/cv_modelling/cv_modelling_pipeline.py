@@ -40,7 +40,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Dict, List, Literal, Sequence, Tuple
+from typing import Literal
 
 import keras_tuner as kt
 import numpy as np
@@ -61,13 +61,9 @@ IMG_WIDTH: int = 224
 BATCH_SIZE: int = 32
 
 # NOTE: Adjust these paths to match your environment if needed.
-PROCESSED_DATA_DIR: str = (
-    "/content/drive/MyDrive/Colab Notebooks/DOAA/cv_data_processed"
-)
+PROCESSED_DATA_DIR: str = "/content/drive/MyDrive/Colab Notebooks/DOAA/cv_data_processed"
 
-MODEL_ROOT_DIR: str = (
-    "/content/drive/MyDrive/Colab Notebooks/DOAA/cv_models"
-)
+MODEL_ROOT_DIR: str = "/content/drive/MyDrive/Colab Notebooks/DOAA/cv_models"
 
 # Subdirectories for different model artefacts
 BASELINE_DIR: str = os.path.join(MODEL_ROOT_DIR, "baseline_cnn")
@@ -127,25 +123,21 @@ def load_split_labels(
     Raises:
         FileNotFoundError: If the labels CSV does not exist.
         KeyError: If required columns are missing in the CSV.
+
     """
     split_dir = os.path.join(base_dir, split_name)
     images_dir = os.path.join(split_dir, "images")
     labels_path = os.path.join(split_dir, "labels.csv")
 
     if not os.path.isfile(labels_path):
-        raise FileNotFoundError(
-            f"labels.csv not found for split '{split_name}' at {labels_path}"
-        )
+        raise FileNotFoundError(f"labels.csv not found for split '{split_name}' at {labels_path}")
 
     df_labels = pd.read_csv(labels_path)
 
     required_cols = {"filename", target_col}
     missing_cols = required_cols.difference(df_labels.columns)
     if missing_cols:
-        raise KeyError(
-            f"Missing expected columns in labels.csv: "
-            f"{sorted(missing_cols)}"
-        )
+        raise KeyError(f"Missing expected columns in labels.csv: {sorted(missing_cols)}")
 
     df_labels["image_path"] = df_labels["filename"].apply(
         lambda name: os.path.join(images_dir, str(name))
@@ -154,18 +146,15 @@ def load_split_labels(
     # Keep only rows where the corresponding image file exists.
     df_labels = df_labels[df_labels["image_path"].apply(os.path.isfile)]
 
-    print(
-        f"[INFO] Loaded {len(df_labels)} samples for split "
-        f"'{split_name}' from {labels_path}"
-    )
+    print(f"[INFO] Loaded {len(df_labels)} samples for split '{split_name}' from {labels_path}")
 
     return df_labels.reset_index(drop=True)
 
 
 def load_all_splits(
     base_dir: str = PROCESSED_DATA_DIR,
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Convenience function to load train, validation, and test splits.
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Load train, validation, and test splits.
 
     Args:
         base_dir: Root directory of processed CV data containing
@@ -173,6 +162,7 @@ def load_all_splits(
 
     Returns:
         A tuple of three DataFrames: ``(df_train, df_val, df_test)``.
+
     """
     df_train = load_split_labels(base_dir, "train")
     df_val = load_split_labels(base_dir, "val")
@@ -216,6 +206,7 @@ def load_and_preprocess_image(
     Returns:
         A float32 image tensor of shape ``(img_height, img_width, 3)`` with
         values in ``[0.0, 1.0]``.
+
     """
 
     def _py_load_image(path_bytes: bytes) -> np.ndarray:
@@ -258,12 +249,11 @@ def make_dataset_from_df(
 
     Returns:
         A ``tf.data.Dataset`` yielding batches of ``(image, target)``.
+
     """
     required_cols = {"image_path", "price_usd"}
     if not required_cols.issubset(df.columns):
-        raise KeyError(
-            "DataFrame must contain 'image_path' and 'price_usd' columns."
-        )
+        raise KeyError("DataFrame must contain 'image_path' and 'price_usd' columns.")
 
     image_paths = df["image_path"].astype(str).to_numpy()
     targets = df["price_usd"].to_numpy(dtype=np.float32)
@@ -273,7 +263,7 @@ def make_dataset_from_df(
     def _map_fn(
         path: tf.Tensor,
         target: tf.Tensor,
-    ) -> Tuple[tf.Tensor, tf.Tensor]:
+    ) -> tuple[tf.Tensor, tf.Tensor]:
         image = load_and_preprocess_image(path, img_height, img_width)
         return image, target
 
@@ -300,7 +290,7 @@ def build_datasets_from_splits(
     img_height: int = IMG_HEIGHT,
     img_width: int = IMG_WIDTH,
     batch_size: int = BATCH_SIZE,
-) -> Tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset, int, int, int]:
+) -> tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset, int, int, int]:
     """Build train, validation, and test datasets from split DataFrames.
 
     Args:
@@ -319,6 +309,7 @@ def build_datasets_from_splits(
             * ``steps_per_epoch``
             * ``val_steps``
             * ``test_steps``
+
     """
     train_ds = make_dataset_from_df(
         df=df_train,
@@ -375,6 +366,7 @@ def root_mean_squared_error(
     Returns:
         A scalar tensor representing the RMSE between ``y_true`` and
         ``y_pred``.
+
     """
     error = y_pred - y_true
     mse = tf.reduce_mean(tf.square(error))
@@ -407,6 +399,7 @@ def build_baseline_cnn(
 
     Returns:
         A compiled Keras Model configured for regression.
+
     """
     inputs = tf.keras.Input(
         shape=(img_height, img_width, 3),
@@ -498,7 +491,7 @@ BASELINE_CHECKPOINT_PATH: str = os.path.join(
 
 def get_baseline_callbacks(
     checkpoint_path: str = BASELINE_CHECKPOINT_PATH,
-) -> List[tf.keras.callbacks.Callback]:
+) -> list[tf.keras.callbacks.Callback]:
     """Create callbacks for baseline CNN training.
 
     The callbacks include:
@@ -512,6 +505,7 @@ def get_baseline_callbacks(
 
     Returns:
         A list of configured Keras callbacks.
+
     """
     os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
 
@@ -557,6 +551,7 @@ def train_baseline_cnn(
     Returns:
         A Keras History object containing the training and validation
         metrics for each epoch.
+
     """
     callbacks = get_baseline_callbacks(checkpoint_path=BASELINE_CHECKPOINT_PATH)
 
@@ -586,6 +581,7 @@ def save_history_and_plots(
         out_dir: Directory to save JSON and PNG files.
         prefix: Prefix for the output filenames (for example,
             ``"baseline"`` or ``"tuned_cnn"``).
+
     """
     os.makedirs(out_dir, exist_ok=True)
 
@@ -596,7 +592,7 @@ def save_history_and_plots(
     print(f"[INFO] Saved training history → {history_path}")
 
     def _plot_metric(metric_name: str, ylabel: str) -> None:
-        """Helper to plot a single metric over epochs."""
+        """Plot a single metric over epochs."""
         if metric_name not in history_dict:
             return
 
@@ -605,7 +601,7 @@ def save_history_and_plots(
         val_values = history_dict.get(val_key)
 
         epochs_range = range(1, len(values) + 1)
-        
+
         plt.figure(figsize=(8, 5))
         plt.plot(epochs_range, values, label=f"Train {metric_name}")
         if val_values is not None:
@@ -651,6 +647,7 @@ def build_cnn_hypermodel(hp: kt.HyperParameters) -> tf.keras.Model:
 
     Returns:
         A compiled Keras Model ready for tuning.
+
     """
     weight_decay = hp.Float(
         "l2_weight",
@@ -756,9 +753,7 @@ def build_cnn_hypermodel(hp: kt.HyperParameters) -> tf.keras.Model:
                 name=f"{block_name}_proj_bn",
             )(shortcut)
 
-        x_rb = tf.keras.layers.Add(name=f"{block_name}_add")(
-            [x_rb, shortcut]
-        )
+        x_rb = tf.keras.layers.Add(name=f"{block_name}_add")([x_rb, shortcut])
         x_rb = tf.keras.layers.Activation(
             "relu",
             name=f"{block_name}_out",
@@ -775,7 +770,7 @@ def build_cnn_hypermodel(hp: kt.HyperParameters) -> tf.keras.Model:
                 x_stage,
                 filters=filters,
                 stride=stride,
-                block_name=f"stage{stage_idx+1}_block{block_idx+1}",
+                block_name=f"stage{stage_idx + 1}_block{block_idx + 1}",
             )
     x = x_stage
 
@@ -870,6 +865,7 @@ def run_hyperparameter_tuning(
 
     Returns:
         A configured and already-searched Keras Tuner instance.
+
     """
     tuner = kt.BayesianOptimization(
         hypermodel=build_cnn_hypermodel,
@@ -919,6 +915,7 @@ def get_and_save_best_hyperparameters(
 
     Returns:
         The best HyperParameters object from the tuner.
+
     """
     os.makedirs(out_dir, exist_ok=True)
 
@@ -943,7 +940,7 @@ def train_best_hyperparameter_model(
     val_ds: tf.data.Dataset,
     out_dir: str = TUNED_DIR,
     epochs: int = 40,
-) -> Tuple[tf.keras.Model, tf.keras.callbacks.History]:
+) -> tuple[tf.keras.Model, tf.keras.callbacks.History]:
     """Build and train the best hyperparameter CNN model.
 
     Args:
@@ -956,6 +953,7 @@ def train_best_hyperparameter_model(
 
     Returns:
         A tuple of (trained_model, history).
+
     """
     os.makedirs(out_dir, exist_ok=True)
     checkpoint_path = os.path.join(out_dir, "tuned_cnn_best.keras")
@@ -1003,7 +1001,7 @@ def evaluate_and_save_metrics(
     test_dataset: tf.data.Dataset,
     out_dir: str,
     filename: str = "test_metrics.json",
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Evaluate a trained model on the test set and save metrics to JSON.
 
     Args:
@@ -1015,6 +1013,7 @@ def evaluate_and_save_metrics(
     Returns:
         A dictionary mapping metric names to their numeric values on the
         test set.
+
     """
     os.makedirs(out_dir, exist_ok=True)
 
@@ -1041,7 +1040,7 @@ def evaluate_and_save_metrics(
 def run_full_cv_modelling_pipeline(
     processed_data_dir: str = PROCESSED_DATA_DIR,
     model_root_dir: str = MODEL_ROOT_DIR,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     """Run the full CV modelling pipeline: baseline, tuning, and evaluation.
 
     This high-level function:
@@ -1062,6 +1061,7 @@ def run_full_cv_modelling_pipeline(
     Returns:
         A dictionary containing key artefacts such as histories, tuner,
         and evaluation metrics.
+
     """
     print("\n[INFO] === Loading processed CV splits ===")
     df_train, df_val, df_test = load_all_splits(base_dir=processed_data_dir)
@@ -1122,7 +1122,7 @@ def run_full_cv_modelling_pipeline(
         out_dir=TUNED_DIR,
     )
 
-    artefacts: Dict[str, object] = {
+    artefacts: dict[str, object] = {
         "df_train": df_train,
         "df_val": df_val,
         "df_test": df_test,

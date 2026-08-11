@@ -19,7 +19,6 @@ import os
 import random
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -31,15 +30,9 @@ from sklearn.model_selection import train_test_split
 # Global configuration
 # ---------------------------------------------------------------------------
 
-RAW_PATH: str = (
-    "/content/drive/MyDrive/Colab Notebooks/DOAA/"
-    "nlp_data_raw/austinHousingData.csv"
-)
+RAW_PATH: str = "/content/drive/MyDrive/Colab Notebooks/DOAA/nlp_data_raw/austinHousingData.csv"
 
-PROCESSED_DIR: str = (
-    "/content/drive/MyDrive/Colab Notebooks/DOAA/"
-    "nlp_data_processed"
-)
+PROCESSED_DIR: str = "/content/drive/MyDrive/Colab Notebooks/DOAA/nlp_data_processed"
 
 TEXT_COLUMN_RAW: str = "description"
 PRICE_COLUMN_RAW: str = "latestPrice"
@@ -80,6 +73,7 @@ class TextSplits:
         y_train: Training targets (prices in USD).
         y_val: Validation targets.
         y_test: Test targets.
+
     """
 
     X_train_text: np.ndarray
@@ -101,6 +95,7 @@ class SequenceSplits:
         y_train: Training targets (matching sequences).
         y_val: Validation targets.
         y_test: Test targets.
+
     """
 
     X_train_seq: np.ndarray
@@ -121,6 +116,7 @@ def configure_random_seeds(seed: int = RANDOM_STATE) -> None:
 
     Args:
         seed: Integer random seed to set for Python, NumPy, and TensorFlow.
+
     """
     random.seed(seed)
     np.random.seed(seed)
@@ -149,6 +145,7 @@ def load_raw_dataset(path: str) -> pd.DataFrame:
 
     Raises:
         FileNotFoundError: If the file cannot be found at ``path``.
+
     """
     if not os.path.isfile(path):
         raise FileNotFoundError(f"Raw data not found at: {path}")
@@ -174,6 +171,7 @@ def plot_description_length_distribution(
         text_col: Name of the column containing the descriptions.
         max_length: Maximum length to display on the x-axis to avoid
             extremely long tails swamping the distribution.
+
     """
     if text_col not in df.columns:
         raise KeyError(f"Column {text_col!r} not in DataFrame.")
@@ -216,6 +214,7 @@ def _remove_price_mentions(text: str) -> str:
 
     Returns:
         Text with likely price mentions removed.
+
     """
     text_no_currency = CURRENCY_PATTERN.sub(" ", text)
     text_no_pure_price = PURE_PRICE_PATTERN.sub(" ", text_no_currency)
@@ -238,6 +237,7 @@ def clean_description_text(text: str) -> str:
 
     Returns:
         Cleaned description string suitable for tokenisation.
+
     """
     if not isinstance(text, str):
         text = "" if text is None else str(text)
@@ -280,6 +280,7 @@ def build_nlp_dataframe(
 
     Returns:
         Cleaned NLP DataFrame with the three columns described above.
+
     """
     if text_col not in df_raw.columns:
         raise KeyError(f"Text column {text_col!r} not found in DataFrame.")
@@ -343,6 +344,7 @@ def create_text_splits(
 
     Raises:
         ValueError: If the split proportions do not sum to 1.0.
+
     """
     if not np.isclose(train_size + val_size + test_size, 1.0):
         raise ValueError("train_size + val_size + test_size must sum to 1.0.")
@@ -404,6 +406,7 @@ def build_text_vectorizer(
 
     Returns:
         A TextVectorization layer ready to be adapted on training text.
+
     """
     vectorizer = tf.keras.layers.TextVectorization(
         max_tokens=max_tokens,
@@ -423,6 +426,7 @@ def adapt_vectorizer(
     Args:
         vectorizer: TextVectorization layer to be adapted.
         X_train_text: Array of cleaned training descriptions.
+
     """
     print("[INFO] Adapting TextVectorization layer on training text...")
     vectorizer.adapt(X_train_text)
@@ -444,7 +448,9 @@ def sequences_from_vectorizer(
     Returns:
         SequenceSplits dataclass with NumPy arrays of sequences and
         matching target arrays.
+
     """
+
     def _to_seq(text_array: np.ndarray) -> np.ndarray:
         """Vectorise and convert to NumPy array."""
         ds = tf.constant(text_array)
@@ -505,6 +511,7 @@ def export_nlp_artifacts(
         y_test_array: Test targets.
         vectorizer: Optional adapted TextVectorization layer whose
             vocabulary will be saved as ``vocabulary.txt``.
+
     """
     os.makedirs(processed_dir, exist_ok=True)
 
@@ -541,7 +548,7 @@ def export_nlp_artifacts(
 def run_full_nlp_data_pipeline(
     raw_path: str = RAW_PATH,
     processed_dir: str = PROCESSED_DIR,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     """Run the full NLP data preparation and sequence-building pipeline.
 
     Steps performed:
@@ -565,6 +572,7 @@ def run_full_nlp_data_pipeline(
             - "text_splits": TextSplits dataclass.
             - "vectorizer": adapted TextVectorization layer.
             - "sequence_splits": SequenceSplits dataclass.
+
     """
     configure_random_seeds(RANDOM_STATE)
 

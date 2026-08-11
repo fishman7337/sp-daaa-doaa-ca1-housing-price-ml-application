@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
-from app.extensions import db
-from app.models import User
-
 
 def _signup(client, username: str, email: str) -> None:
     client.post(
@@ -87,4 +82,3 @@ def test_dashboard_after_login(client) -> None:
     resp = client.get("/dashboard")
     assert resp.status_code == 200
     assert b"Prediction ready" in resp.data or b"Multimodal prediction" in resp.data
-

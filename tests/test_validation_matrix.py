@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from io import BytesIO
 
-import pytest
-
 
 def _login_and_stub_service(client, monkeypatch, username: str = "matrix"):
     """Register/login and provide a stub model service with listing counts."""
@@ -106,7 +104,10 @@ def test_predict_unexpected_model_error(client, monkeypatch):
 
     class BoomService:
         def __init__(self):
-            self.listing_counts = {"state_to_cities": {"tx": {"austin": 1}}, "state_listing_count": {"tx": 1}}
+            self.listing_counts = {
+                "state_to_cities": {"tx": {"austin": 1}},
+                "state_listing_count": {"tx": 1},
+            }
 
         def predict(self, *args, **kwargs):
             raise RuntimeError("kaboom")

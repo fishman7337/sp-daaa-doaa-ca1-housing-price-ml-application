@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "max_tracked_file_mib": 95,
+  "artifacts": [
+    {
+      "path": "models/tuned_cnn_best.keras",
+      "bytes": 84060588,
+      "sha256": "4b7f1eac0df1ac6c23d08c60004827ac4f0de1a92a6a44c34520f83075ab6e73",
+      "purpose": "Deployed property-image CNN"
+    },
+    {
+      "path": "models/best_rnn_model_full.keras",
+      "bytes": 55704299,
+      "sha256": "21e9f9b50165689cad386d08d73c66223da3c1a7621f08e6de2ae1fd2a94cc09",
+      "purpose": "Deployed listing-description RNN"
+    },
+    {
+      "path": "static/uploads/hero-background.mp4",
+      "bytes": 50896006,
+      "sha256": "c1bedd17067b77b99fd883e5134e26bfa73cce5da7ec16a1d852c77c0c890f91",
+      "purpose": "Landing-page demo media"
+    },
+    {
+      "path": "static/uploads/signup-hero.mp4",
+      "bytes": 41722364,
+      "sha256": "0965a053b6856d6bb48d97006ffd4b0a0915f1ff57a92b832d3d011f27cbcfb3",
+      "purpose": "Signup-page demo media"
+    },
+    {
+      "path": "models/best_regressor.joblib",
+      "bytes": 39019676,
+      "sha256": "b79fb84111d743ca04a48b3464c3e30541db410162fe0fc28f534e9e1bc733a6",
+      "purpose": "Deployed structured-feature regressor"
+    },
+    {
+      "path": "nlp_data/processed/nlp_text_cleaned.csv",
+      "bytes": 14058126,
+      "sha256": "c9ae7e56d1c4fcf986a7f25903278325b0d638603cb425670e0a1f7bb4cec443",
+      "purpose": "Cleaned text snapshot used by the NLP workflow"
+    },
+    {
+      "path": "nlp_data/raw/austinHousingData.csv",
+      "bytes": 11853775,
+      "sha256": "306b4569cfdd158728367bd1ea05a1d4b06da36643ac99eff1fdb51bc730177e",
+      "purpose": "Source snapshot used by the NLP workflow"
+    }
+  ]
+}

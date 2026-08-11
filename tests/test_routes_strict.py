@@ -9,12 +9,7 @@ These tests focus on:
 
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
-
-import pytest
 from flask import Flask
-
-from app.extensions import db
 
 
 def _register(client, username: str = "user1") -> None:
@@ -119,7 +114,9 @@ def test_price_trend_api_success_and_error(client, monkeypatch) -> None:
 
     monkeypatch.setattr(
         "app.routes._load_price_trend",
-        lambda state=None, city=None: [{"date": "2024-01-01", "mean": 100.0, "median": 90.0, "count": 1}],
+        lambda state=None, city=None: [
+            {"date": "2024-01-01", "mean": 100.0, "median": 90.0, "count": 1}
+        ],
     )
     ok = client.get("/api/price-trend")
     assert ok.status_code == 200
@@ -148,7 +145,9 @@ def test_price_distribution_api_success_and_error(client, monkeypatch) -> None:
     assert ok.status_code == 200
     assert ok.get_json()["counts"] == [1]
 
-    monkeypatch.setattr("app.routes._load_price_distribution", lambda: (_ for _ in ()).throw(RuntimeError("fail")))
+    monkeypatch.setattr(
+        "app.routes._load_price_distribution", lambda: (_ for _ in ()).throw(RuntimeError("fail"))
+    )
     err = client.get("/api/price-distribution")
     assert err.status_code == 200
     assert err.get_json() == {"edges": [], "counts": []}
@@ -202,10 +201,17 @@ def test_chat_housing_guard_and_fallback(client) -> None:
     # Must be logged in to use chat
     client.post(
         "/signup",
-        data={"username": "chatuser", "email": "chat@example.com", "password": "secret123", "terms": "y"},
+        data={
+            "username": "chatuser",
+            "email": "chat@example.com",
+            "password": "secret123",
+            "terms": "y",
+        },
         follow_redirects=True,
     )
-    client.post("/login", data={"username": "chatuser", "password": "secret123"}, follow_redirects=True)
+    client.post(
+        "/login", data={"username": "chatuser", "password": "secret123"}, follow_redirects=True
+    )
 
     # Non-housing question should be rejected politely.
     guard = client.post("/api/chat", json={"message": "Tell me a joke"})
