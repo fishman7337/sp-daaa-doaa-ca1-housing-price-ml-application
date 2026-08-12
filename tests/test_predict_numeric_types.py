@@ -24,7 +24,10 @@ def _login_with_stub(client, monkeypatch):
 
     class DummyService:
         def __init__(self):
-            self.listing_counts = {"state_to_cities": {"tx": {"austin": 1}}, "state_listing_count": {"tx": 1}}
+            self.listing_counts = {
+                "state_to_cities": {"tx": {"austin": 1}},
+                "state_listing_count": {"tx": 1},
+            }
 
         def predict(self, structured_payload=None, description=None, image_paths=None):
             return {"tabular": 101000.0}, 101000.0

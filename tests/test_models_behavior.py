@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from math import inf, nan
-from datetime import datetime, UTC
 
-from app.models import Prediction, User
 from app.extensions import db
+from app.models import Prediction, User
 
 
 def test_user_password_hash_and_check(app):

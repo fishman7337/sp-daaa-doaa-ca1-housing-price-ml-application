@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import os
+import re
 import secrets
-from datetime import datetime, timedelta
+import tempfile
 from pathlib import Path
-from typing import Dict, Optional, List
 
+import numpy as np
+import pandas as pd
+import requests
 from flask import (
     Blueprint,
     current_app,
@@ -23,30 +26,23 @@ from flask_login import current_user, login_required, login_user, logout_user
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
-import pandas as pd
-import numpy as np
-import requests
-import re
-import tempfile
-
 from .extensions import db
 from .forms import LoginForm, PredictionForm, SignupForm
 from .models import ChatMessage, Prediction, User
 from .services.model_service import ModelService
 from .services.preprocessing import (
-    STATE_NAME_TO_ABBR,
     STATE_ABBR_TO_NAME,
+    STATE_NAME_TO_ABBR,
     _clean_city_name,
     _clean_state_name,
 )
 
 main_bp = Blueprint("main", __name__)
-TREND_CACHE: Dict[str, List[Dict[str, object]]] = {}
+TREND_CACHE: dict[str, list[dict[str, object]]] = {}
 
 
-def _resolve_time_series_path() -> Optional[Path]:
+def _resolve_time_series_path() -> Path | None:
     """Resolve the pre-aggregated time series CSV shipped in data/."""
-
     configured = current_app.config.get("TREND_TIMESERIES_PATH")
     if configured:
         p = Path(configured)
@@ -60,9 +56,8 @@ def _resolve_time_series_path() -> Optional[Path]:
     return next((p for p in candidate_paths if p.exists()), None)
 
 
-def _resolve_histogram_path() -> Optional[Path]:
+def _resolve_histogram_path() -> Path | None:
     """Resolve the pre-aggregated histogram CSV shipped in data/."""
-
     configured = current_app.config.get("TREND_HISTOGRAM_PATH")
     if configured:
         p = Path(configured)
@@ -76,9 +71,8 @@ def _resolve_histogram_path() -> Optional[Path]:
     return next((p for p in candidate_paths if p.exists()), None)
 
 
-def _extract_drive_id(url: str) -> Optional[str]:
+def _extract_drive_id(url: str) -> str | None:
     """Pull the Google Drive file id from a typical share URL."""
-
     if "drive.google.com" in url and "/d/" in url:
         try:
             return url.split("/d/")[1].split("/")[0]
@@ -94,16 +88,14 @@ def _extract_drive_id(url: str) -> Optional[str]:
 
 def _normalize_drive_url(url: str) -> str:
     """Convert a Google Drive share link to a direct download URL."""
-
     file_id = _extract_drive_id(url)
     if file_id:
         return f"https://drive.google.com/uc?export=download&id={file_id}"
     return url
 
 
-def _download_csv_bytes(remote_url: str) -> Optional[bytes]:
+def _download_csv_bytes(remote_url: str) -> bytes | None:
     """Download CSV content; handle Google Drive virus scan confirmation for large files."""
-
     file_id = _extract_drive_id(remote_url)
     session = requests.Session()
     dl_url = _normalize_drive_url(remote_url)
@@ -118,10 +110,14 @@ def _download_csv_bytes(remote_url: str) -> Optional[bytes]:
         content = resp.content
         if file_id and _looks_like_html(content):
             # Try to extract confirm token
-            match = re.search(rb'confirm=([0-9A-Za-z_-]+)', content)
+            match = re.search(rb"confirm=([0-9A-Za-z_-]+)", content)
             token = match.group(1).decode() if match else "t"
             confirm_url = "https://drive.usercontent.google.com/download"
-            resp = session.get(confirm_url, params={"id": file_id, "export": "download", "confirm": token}, timeout=180)
+            resp = session.get(
+                confirm_url,
+                params={"id": file_id, "export": "download", "confirm": token},
+                timeout=180,
+            )
             resp.raise_for_status()
             content = resp.content
         if _looks_like_html(content) or len(content) < 1024:
@@ -148,14 +144,13 @@ def _download_csv_bytes(remote_url: str) -> Optional[bytes]:
         return None
 
 
-def _resolve_trend_data_path() -> Optional[Path]:
-    """
-    Resolve the trend/distribution CSV:
+def _resolve_trend_data_path() -> Path | None:
+    """Resolve the trend/distribution CSV.
+
     1) Use TREND_DATA_PATH if it exists.
     2) Otherwise download from TREND_DATA_URL (supports Google Drive) to instance/cache.
     3) Fall back to local project paths.
     """
-
     configured = current_app.config.get("TREND_DATA_PATH")
     if configured:
         p = Path(configured)
@@ -187,14 +182,12 @@ def _resolve_trend_data_path() -> Optional[Path]:
 
 
 def _load_price_dataframe(data_path: Path) -> pd.DataFrame:
-    """
-    Load the price CSV with robust column normalization.
+    """Load the price CSV with robust column normalization.
 
     Accepts variations like upper-case headers or alternative names
     (e.g., sold_price, sold_date). Returns an empty DataFrame if required
     columns are missing.
     """
-
     try:
         df = pd.read_csv(data_path)
     except Exception as exc:  # noqa: BLE001
@@ -249,14 +242,11 @@ def _get_model_service() -> ModelService:
     return g.model_service
 
 
-def _valid_city_names(listing_counts: Dict[str, Dict[str, object]]) -> list[str]:
+def _valid_city_names(listing_counts: dict[str, dict[str, object]]) -> list[str]:
     """Return a sorted list of cities mapped to a known US state."""
-
     state_to_cities = listing_counts.get("state_to_cities") or {}
     if state_to_cities:
-        city_pool = {
-            city for cities in state_to_cities.values() for city in (cities or {}).keys()
-        }
+        city_pool = {city for cities in state_to_cities.values() for city in (cities or {}).keys()}
     else:
         city_pool = set((listing_counts.get("city_listing_count") or {}).keys())
     return sorted(city_pool)
@@ -264,7 +254,6 @@ def _valid_city_names(listing_counts: Dict[str, Dict[str, object]]) -> list[str]
 
 def _load_price_trend(state: str | None = None, city: str | None = None) -> list[dict]:
     """Load (and cache) monthly mean/median price trend for optional state/city filters."""
-
     cache_key = f"{state or ''}|{city or ''}"
     if cache_key in TREND_CACHE:
         return TREND_CACHE[cache_key]
@@ -325,7 +314,6 @@ def _load_price_trend(state: str | None = None, city: str | None = None) -> list
 
 def _load_price_distribution() -> dict:
     """Return histogram edges/counts for recent prices (last 5 years), cached."""
-
     cache_key = "price_distribution"
     if cache_key in TREND_CACHE:
         return TREND_CACHE[cache_key]
@@ -361,7 +349,6 @@ def _load_price_distribution() -> dict:
 
 def _save_images(files: list[FileStorage]) -> list[str]:
     """Persist uploaded images and return relative paths."""
-
     saved: list[str] = []
     upload_dir = Path(current_app.config["UPLOAD_FOLDER"])
     upload_dir.mkdir(parents=True, exist_ok=True)
@@ -380,9 +367,8 @@ def _save_images(files: list[FileStorage]) -> list[str]:
     return saved
 
 
-def _collect_structured_payload(form: PredictionForm) -> Optional[Dict[str, object]]:
+def _collect_structured_payload(form: PredictionForm) -> dict[str, object] | None:
     """Extract structured fields if any were provided."""
-
     fields = {
         "city": form.city.data,
         "state": form.state.data,
@@ -398,14 +384,13 @@ def _collect_structured_payload(form: PredictionForm) -> Optional[Dict[str, obje
 
 
 def _record_prediction(
-    preds: Dict[str, float],
+    preds: dict[str, float],
     final_price: float,
-    structured_payload: Optional[Dict[str, object]],
-    description: Optional[str],
-    image_rel_path: Optional[str],
+    structured_payload: dict[str, object] | None,
+    description: str | None,
+    image_rel_path: str | None,
 ) -> Prediction:
     """Persist a prediction record for the current user."""
-
     prediction = Prediction(
         user_id=current_user.id,
         structured_payload=structured_payload,
@@ -421,20 +406,16 @@ def _record_prediction(
     return prediction
 
 
-def _build_location_choices(listing_counts: Dict[str, Dict[str, int]]):
+def _build_location_choices(listing_counts: dict[str, dict[str, int]]):
     """Return city/state select choices from cleaned listing counts."""
-
     valid_cities = _valid_city_names(listing_counts)
     state_counts = listing_counts.get("state_listing_count") or {}
     state_to_cities = listing_counts.get("state_to_cities") or {}
     state_keys = sorted(set(state_counts.keys()) | set(state_to_cities.keys()))
 
     city_choices = [("", "Select city")] + [(c, c.title()) for c in valid_cities]
-    state_choices = [
-        ("", "Select state")
-    ] + [
-        (s, f"{STATE_NAME_TO_ABBR.get(s, s.upper())} - {s.title()}")
-        for s in state_keys
+    state_choices = [("", "Select state")] + [
+        (s, f"{STATE_NAME_TO_ABBR.get(s, s.upper())} - {s.title()}") for s in state_keys
     ]
     return city_choices, state_choices
 
@@ -444,11 +425,13 @@ def _build_location_choices(listing_counts: Dict[str, Dict[str, int]]):
 # ---------------------------------------------------------------------------
 @main_bp.route("/")
 def index():
+    """Render the public landing page."""
     return render_template("index.html")
 
 
 @main_bp.route("/signup", methods=["GET", "POST"])
 def signup():
+    """Register a new user account."""
     form = SignupForm()
     if form.validate_on_submit():
         if User.query.filter_by(username=form.username.data).first():
@@ -469,6 +452,7 @@ def signup():
 
 @main_bp.route("/login", methods=["GET", "POST"])
 def login():
+    """Authenticate a user and start a session."""
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
@@ -483,6 +467,7 @@ def login():
 @main_bp.route("/logout")
 @login_required
 def logout():
+    """End the current user's authenticated session."""
     logout_user()
     flash("Logged out.", "info")
     return redirect(url_for("main.index"))
@@ -494,6 +479,7 @@ def logout():
 @main_bp.route("/dashboard", methods=["GET", "POST"])
 @login_required
 def dashboard():
+    """Render the prediction dashboard and handle form submissions."""
     form = PredictionForm()
     service = _get_model_service()
     listing_counts = getattr(service, "listing_counts", {}) or {}
@@ -566,6 +552,7 @@ def dashboard():
 @main_bp.route("/api/history", methods=["GET"])
 @login_required
 def api_history():
+    """Return the current user's recent prediction history."""
     history = (
         Prediction.query.filter_by(user_id=current_user.id)
         .order_by(Prediction.created_at.desc())
@@ -579,7 +566,6 @@ def api_history():
 @login_required
 def api_delete_history(history_id: int):
     """Delete a single prediction owned by the current user."""
-
     record = Prediction.query.filter_by(id=history_id, user_id=current_user.id).first()
     if not record:
         return jsonify({"error": "Not found"}), 404
@@ -591,6 +577,7 @@ def api_delete_history(history_id: int):
 @main_bp.route("/api/predict", methods=["POST"])
 @login_required
 def api_predict():
+    """Validate an API prediction request and persist its result."""
     form = PredictionForm()
     service = _get_model_service()
     listing_counts = getattr(service, "listing_counts", {}) or {}
@@ -623,14 +610,15 @@ def api_predict():
         image_rel_path=image_rel_paths[0] if image_rel_paths else None,
     )
     safe_preds = {k: (float(v) if v is not None else None) for k, v in preds.items()}
-    return jsonify({"predictions": safe_preds, "final_price": float(final_price), "history_id": record.id})
+    return jsonify(
+        {"predictions": safe_preds, "final_price": float(final_price), "history_id": record.id}
+    )
 
 
 @main_bp.route("/api/cities")
 @login_required
 def api_cities():
     """Return cities for the current user filtered by state if available."""
-
     state_param = (request.args.get("state") or "").strip().lower()
     service = _get_model_service()
     listing_counts = getattr(service, "listing_counts", {}) or {}
@@ -670,7 +658,6 @@ def api_cities():
 @login_required
 def api_price_trend():
     """Return monthly mean/median price trend, optionally filtered by state/city."""
-
     state_param = (request.args.get("state") or "").strip().lower()
     city_param = (request.args.get("city") or "").strip().lower()
     try:
@@ -687,7 +674,6 @@ def api_price_trend():
 @login_required
 def api_price_distribution():
     """Return histogram counts/edges for recent sale prices."""
-
     try:
         data = _load_price_distribution()
         return jsonify(data)
@@ -700,7 +686,6 @@ def api_price_distribution():
 @login_required
 def api_chat_history():
     """Return chat history for the logged-in user."""
-
     messages = (
         ChatMessage.query.filter_by(user_id=current_user.id)
         .order_by(ChatMessage.created_at.asc())
@@ -713,7 +698,6 @@ def api_chat_history():
 @login_required
 def api_chat():
     """Chat endpoint. Tied to user accounts; stores/retrieves per-user history."""
-
     payload = request.get_json(silent=True) or {}
     message = (payload.get("message") or "").strip()
     if not message:
@@ -721,12 +705,37 @@ def api_chat():
 
     lower = message.lower()
     housing_terms = [
-        "house", "housing", "home", "property", "real estate", "listing", "mls", "zillow",
-        "price", "worth", "valuation", "appraisal", "comps", "rent", "lease", "mortgage",
-        "down payment", "interest rate", "hoa", "tax", "neighborhood", "zip", "bedroom", "bath",
+        "house",
+        "housing",
+        "home",
+        "property",
+        "real estate",
+        "listing",
+        "mls",
+        "zillow",
+        "price",
+        "worth",
+        "valuation",
+        "appraisal",
+        "comps",
+        "rent",
+        "lease",
+        "mortgage",
+        "down payment",
+        "interest rate",
+        "hoa",
+        "tax",
+        "neighborhood",
+        "zip",
+        "bedroom",
+        "bath",
     ]
     if not any(term in lower for term in housing_terms):
-        return jsonify({"reply": "I'm focused on housing questions (pricing, comps, listings, mortgages). Ask me about a property or the market."})
+        return jsonify(
+            {
+                "reply": "I'm focused on housing questions (pricing, comps, listings, mortgages). Ask me about a property or the market."
+            }
+        )
 
     # Pull prior history from DB for context (limit to last 20)
     history_msgs = (
@@ -741,7 +750,12 @@ def api_chat():
         try:
             from openai import OpenAI  # type: ignore
 
-            messages = [{"role": "system", "content": "You are a helpful housing assistant. Only answer housing-related questions (valuations, comps, listings, mortgages, renovations, neighborhoods) and politely refuse unrelated topics. Keep responses concise and useful."}]
+            messages = [
+                {
+                    "role": "system",
+                    "content": "You are a helpful housing assistant. Only answer housing-related questions (valuations, comps, listings, mortgages, renovations, neighborhoods) and politely refuse unrelated topics. Keep responses concise and useful.",
+                }
+            ]
             for item in context:
                 role = item.get("role")
                 content = (item.get("content") or "").strip()

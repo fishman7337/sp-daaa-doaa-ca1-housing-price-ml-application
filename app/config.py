@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Type
 
 from sqlalchemy.pool import NullPool
 
@@ -22,7 +21,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 def _path_from_env(name: str, default: Path) -> str:
     """Resolve path-like environment variables relative to the project root."""
-
     configured = os.environ.get(name)
     if not configured:
         return str(default)
@@ -35,7 +33,6 @@ def _path_from_env(name: str, default: Path) -> str:
 
 def _sqlite_uri(db_name: str) -> str:
     """Build a cross-platform SQLite URI."""
-
     db_path = (BASE_DIR / "instance" / db_name).as_posix()
     return f"sqlite:///{db_path}"
 
@@ -87,9 +84,8 @@ class Config:
     WTF_CSRF_TIME_LIMIT = None
 
 
-def get_config() -> Type[Config]:
+def get_config() -> type[Config]:
     """Return the active configuration class."""
-
     return Config
 
 

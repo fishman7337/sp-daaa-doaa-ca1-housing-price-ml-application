@@ -1,5 +1,4 @@
-"""
-Data cleaning pipeline for USA real estate dataset.
+"""Data cleaning pipeline for USA real estate dataset.
 
 This module implements a reusable, production-oriented cleaning pipeline for the
 USA real estate dataset used in the DOAA project. It focuses on:
@@ -32,13 +31,13 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from scipy import stats
-from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.ensemble import ExtraTreesRegressor, IsolationForest
+from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.impute import IterativeImputer, KNNImputer
 
 LOGGER = logging.getLogger(__name__)
@@ -65,6 +64,7 @@ class CleaningConfig:
             instead of leaving them unchanged.
         iforest_contamination: Expected fraction of multivariate outliers for
             IsolationForest.
+
     """
 
     remove_univariate_outliers: bool = False
@@ -78,7 +78,7 @@ class CleaningConfig:
 # =============================================================================
 
 
-def drop_duplicates_safely(df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
+def drop_duplicates_safely(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
     """Drop duplicate rows from a DataFrame.
 
     Args:
@@ -88,6 +88,7 @@ def drop_duplicates_safely(df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
         A tuple of:
             * A new DataFrame with duplicate rows removed.
             * The number of duplicate rows removed.
+
     """
     n_before = len(df)
     df_dedup = df.drop_duplicates()
@@ -108,8 +109,9 @@ def summarize_structure(df: pd.DataFrame) -> pd.DataFrame:
             * n_missing: Number of missing values.
             * pct_missing: Percentage of missing values (0–100).
             * n_unique: Number of unique non-null values.
+
     """
-    records: List[Dict[str, Any]] = []
+    records: list[dict[str, Any]] = []
     n_rows = len(df)
 
     for col in df.columns:
@@ -131,7 +133,7 @@ def summarize_structure(df: pd.DataFrame) -> pd.DataFrame:
     return struct
 
 
-def detect_column_types(df: pd.DataFrame) -> Dict[str, List[str]]:
+def detect_column_types(df: pd.DataFrame) -> dict[str, list[str]]:
     """Infer basic column types (numeric, categorical, datetime).
 
     Args:
@@ -142,6 +144,7 @@ def detect_column_types(df: pd.DataFrame) -> Dict[str, List[str]]:
             * "numeric": List of numeric columns.
             * "categorical": List of categorical-like columns.
             * "datetime": List of datetime-like columns.
+
     """
     numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
     datetime_cols = df.select_dtypes(
@@ -149,9 +152,7 @@ def detect_column_types(df: pd.DataFrame) -> Dict[str, List[str]]:
     ).columns.tolist()
 
     # Treat any non-numeric, non-datetime column as categorical.
-    categorical_cols = [
-        c for c in df.columns if c not in numeric_cols + datetime_cols
-    ]
+    categorical_cols = [c for c in df.columns if c not in numeric_cols + datetime_cols]
 
     return {
         "numeric": numeric_cols,
@@ -187,6 +188,7 @@ def choose_imputation_strategy(
             * "unknown_token": Fill with "unknown".
             * "unknown_date": Treat date-like as categorical "unknown".
             * "drop_column": Drop column from the dataset.
+
     """
     col_lower = col_name.lower()
 
@@ -223,7 +225,7 @@ def choose_imputation_strategy(
 
 def fit_iterative_imputer_et(
     df: pd.DataFrame,
-    numeric_cols: List[str],
+    numeric_cols: list[str],
     random_state: int = 42,
 ) -> IterativeImputer:
     """Fit an IterativeImputer with ExtraTreesRegressor on selected columns.
@@ -235,6 +237,7 @@ def fit_iterative_imputer_et(
 
     Returns:
         A fitted IterativeImputer instance.
+
     """
     x = df[numeric_cols].copy()
     x = x.replace([np.inf, -np.inf], np.nan)
@@ -257,7 +260,7 @@ def fit_iterative_imputer_et(
 
 def apply_iterative_imputer_et(
     df: pd.DataFrame,
-    numeric_cols: List[str],
+    numeric_cols: list[str],
     imputer: IterativeImputer,
 ) -> pd.DataFrame:
     """Apply a fitted IterativeImputer to selected numeric columns.
@@ -269,6 +272,7 @@ def apply_iterative_imputer_et(
 
     Returns:
         A new DataFrame with imputed numeric columns.
+
     """
     df_out = df.copy()
     x = df_out[numeric_cols].copy()
@@ -286,6 +290,7 @@ def choose_univariate_method(series: pd.Series) -> str:
 
     Returns:
         One of "zscore", "mad", or "iqr".
+
     """
     x = pd.to_numeric(series, errors="coerce")
     x = x.replace([np.inf, -np.inf], np.nan).dropna()
@@ -311,6 +316,7 @@ def flag_univariate_outliers(series: pd.Series, method: str = "iqr") -> pd.Serie
 
     Returns:
         A boolean Series where True indicates an outlier.
+
     """
     x = pd.to_numeric(series, errors="coerce")
     x = x.replace([np.inf, -np.inf], np.nan)
@@ -340,7 +346,7 @@ def flag_univariate_outliers(series: pd.Series, method: str = "iqr") -> pd.Serie
 
 def detect_multivariate_outliers_iforest(
     df: pd.DataFrame,
-    numeric_cols: List[str],
+    numeric_cols: list[str],
     contamination: float = 0.01,
     random_state: int = 42,
 ) -> pd.Series:
@@ -354,6 +360,7 @@ def detect_multivariate_outliers_iforest(
 
     Returns:
         A boolean Series where True indicates an outlier.
+
     """
     x = df[numeric_cols].copy()
     x = x.replace([np.inf, -np.inf], np.nan)
@@ -382,7 +389,7 @@ def clean_dataset(
     remove_multivar_outliers: bool = False,
     cap_univariate_outliers: bool = True,
     iforest_contamination: float = 0.01,
-) -> Tuple[pd.DataFrame, Dict[str, Dict[str, Any]]]:
+) -> tuple[pd.DataFrame, dict[str, dict[str, Any]]]:
     """Clean the USA real estate dataset using advanced methods.
 
     The cleaning pipeline performs the following high-level steps:
@@ -417,8 +424,9 @@ def clean_dataset(
             * cleaned: Cleaned DataFrame.
             * meta: Dictionary containing strategies, diagnostics, and summary
               statistics for the cleaning process.
+
     """
-    meta: Dict[str, Dict[str, Any]] = {}
+    meta: dict[str, dict[str, Any]] = {}
 
     # --- 0) Drop duplicates upfront ---
     df_dedup, n_dupes_removed = drop_duplicates_safely(df)
@@ -453,9 +461,7 @@ def clean_dataset(
             TARGET_COL,
         )
         cleaned = cleaned.loc[cleaned[TARGET_COL].notna()].copy()
-    meta["target_price_missing_rows_dropped_initial"] = {
-        "count": n_missing_price_initial
-    }
+    meta["target_price_missing_rows_dropped_initial"] = {"count": n_missing_price_initial}
 
     # --- Type & missingness info (after dropping missing price) ---
     struct = summarize_structure(cleaned)
@@ -465,7 +471,7 @@ def clean_dataset(
     datetime_cols = col_types["datetime"]
 
     # --- 1) Imputation plan (from struct) ---
-    plan_rows: List[Dict[str, Any]] = []
+    plan_rows: list[dict[str, Any]] = []
     for col, row in struct.iterrows():
         strategy = choose_imputation_strategy(
             col_name=col,
@@ -503,9 +509,7 @@ def clean_dataset(
         datetime_cols = [c for c in datetime_cols if c not in drop_cols]
 
     # --- 2.5) Date columns with 'unknown_date' → treat as categorical ---
-    unknown_date_cols = impute_plan[
-        impute_plan["strategy"] == "unknown_date"
-    ].index.tolist()
+    unknown_date_cols = impute_plan[impute_plan["strategy"] == "unknown_date"].index.tolist()
     unknown_date_cols = [c for c in unknown_date_cols if c in cleaned.columns]
 
     datetime_cols = [c for c in datetime_cols if c not in unknown_date_cols]
@@ -634,8 +638,7 @@ def clean_dataset(
     # --- 7) Advanced outlier handling on key numeric columns ---
 
     target_outlier_cols = [
-        c for c in ["price", "house_size", "bed", "bath", "acre_lot"]
-        if c in numeric_cols
+        c for c in ["price", "house_size", "bed", "bath", "acre_lot"] if c in numeric_cols
     ]
 
     meta["log_transform"] = {}
@@ -673,8 +676,7 @@ def clean_dataset(
 
     # 7.3) Multivariate outliers via IsolationForest
     iforest_cols = [
-        c for c in ["price", "house_size", "bed", "bath", "acre_lot"]
-        if c in numeric_cols
+        c for c in ["price", "house_size", "bed", "bath", "acre_lot"] if c in numeric_cols
     ]
 
     if iforest_cols:
@@ -714,7 +716,8 @@ def clean_dataset(
     # 8.2) Optional: row drops based on univariate flags
     if remove_univariate_outliers and target_outlier_cols:
         uni_flag_cols = [
-            f"{c}__is_uni_outlier" for c in target_outlier_cols
+            f"{c}__is_uni_outlier"
+            for c in target_outlier_cols
             if f"{c}__is_uni_outlier" in cleaned.columns
         ]
         uni_flags = cleaned[uni_flag_cols].max(axis=1).astype(bool)
@@ -726,11 +729,7 @@ def clean_dataset(
         meta["rows_removed_univariate"] = {"count": n_drop_uni}
 
     # 8.3) Optional: row drops based on multivariate flags
-    if (
-        remove_multivar_outliers
-        and iforest_cols
-        and "is_multivar_outlier" in cleaned.columns
-    ):
+    if remove_multivar_outliers and iforest_cols and "is_multivar_outlier" in cleaned.columns:
         multi_flags_aligned = cleaned["is_multivar_outlier"] == 1
         mask_keep_multi = ~multi_flags_aligned
         n_drop_multi = int((~mask_keep_multi).sum())
@@ -742,12 +741,7 @@ def clean_dataset(
     # --- 9) Enforce discrete counts for bed and bath ---
     for col in ["bed", "bath"]:
         if col in cleaned.columns:
-            cleaned[col] = (
-                cleaned[col]
-                .round(0)
-                .clip(lower=0)
-                .astype("int16")
-            )
+            cleaned[col] = cleaned[col].round(0).clip(lower=0).astype("int16")
 
     # Final sanity check: price must have no NaNs.
     if TARGET_COL in cleaned.columns:
@@ -774,8 +768,8 @@ def clean_dataset(
 
 def run_cleaning_pipeline(
     df: pd.DataFrame,
-    config: Optional[CleaningConfig] = None,
-) -> Tuple[pd.DataFrame, Dict[str, Dict[str, Any]]]:
+    config: CleaningConfig | None = None,
+) -> tuple[pd.DataFrame, dict[str, dict[str, Any]]]:
     """Run the full cleaning pipeline using a CleaningConfig.
 
     This function is the main entrypoint to integrate the cleaner into an
@@ -790,6 +784,7 @@ def run_cleaning_pipeline(
         A tuple of:
             * cleaned: Cleaned DataFrame.
             * meta: Metadata dictionary with diagnostics and decisions.
+
     """
     if config is None:
         config = CleaningConfig()

@@ -1,10 +1,17 @@
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP"]
+select = ["E", "F", "I", "B", "UP", "D"]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.coverage.run]
 source = ["app"]
@@ -13,3 +20,4 @@ omit = ["tests/*"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
+fail_under = 55

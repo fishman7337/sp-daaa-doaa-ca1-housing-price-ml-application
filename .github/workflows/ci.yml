@@ -5,6 +5,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     name: Python tests
@@ -13,16 +19,15 @@ jobs:
 
     env:
       SECRET_KEY: ci-secret-key
-      DATABASE_URL: sqlite:///instance/ci.db
+      DATABASE_URL: sqlite:///ci.db
       OPENAI_API_KEY: ""
       TF_CPP_MIN_LOG_LEVEL: "2"
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
-
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
           cache: pip
@@ -38,6 +43,18 @@ jobs:
       - name: Verify dependency graph
         run: python -m pip check
 
+      - name: Audit dependencies
+        run: python -m pip_audit --local
+
+      - name: Lint Python and docstrings
+        run: python -m ruff check .
+
+      - name: Check Python formatting
+        run: python -m ruff format --check .
+
+      - name: Scan application security
+        run: python -m bandit -r app scripts -q -ll
+
       - name: Compile Python files
         run: python -m compileall app src tests scripts
 
@@ -46,3 +63,51 @@ jobs:
 
       - name: Run tests
         run: python -m pytest
+
+      - name: Smoke-test the WSGI entry point
+        run: python -c "from wsgi import app; response = app.test_client().get('/'); assert response.status_code == 200, response.status_code"
+
+  container:
+    name: Container build and smoke test
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - name: Build production image
+        run: docker build --tag estatescope-ai:ci .
+
+      - name: Start production image
+        run: |
+          docker run --detach --name estatescope-ai-ci \
+            --env SECRET_KEY=ci-secret-key \
+            --env DATABASE_URL=sqlite:////tmp/ci.db \
+            --publish 5000:5000 \
+            estatescope-ai:ci
+
+      - name: Wait for container health
+        run: |
+          for attempt in {1..30}; do
+            status="$(docker inspect --format='{{.State.Health.Status}}' estatescope-ai-ci)"
+            if [ "$status" = "healthy" ]; then
+              curl --fail --silent --show-error http://127.0.0.1:5000/ > /dev/null
+              exit 0
+            fi
+            if [ "$status" = "unhealthy" ]; then
+              docker logs estatescope-ai-ci
+              exit 1
+            fi
+            sleep 5
+          done
+          docker logs estatescope-ai-ci
+          exit 1
+
+      - name: Show container logs
+        if: always()
+        run: docker logs estatescope-ai-ci || true
+
+      - name: Stop container
+        if: always()
+        run: docker rm --force estatescope-ai-ci || true

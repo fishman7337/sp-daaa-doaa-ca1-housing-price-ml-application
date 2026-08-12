@@ -39,3 +39,15 @@ The model supports academic demonstration of DevOps, automation, validation, dep
 ## Evaluation Expectations
 
 Record MAE, RMSE, R2, data split, feature list, and artifact checksum for each promoted tabular model. For NLP/CNN models, include validation loss or MAE and the dataset size.
+
+## Verified Evaluation Snapshot
+
+The committed NLP artifact was evaluated on 11 August 2026 against the committed 1,517-example test split using TensorFlow CPU 2.21.0:
+
+- MAE: $157,378.25.
+- RMSE: $311,910.03.
+- R²: 0.4404.
+- Target range: $52,500 to $6,000,000.
+- Prediction range: $218,860.30 to $1,463,931.38.
+
+See `reports/metrics/nlp-metrics.json` and reproduce with `python scripts/evaluate_nlp_model.py`. Comparable held-out tabular and CNN evaluation datasets are not committed, so this repository does not claim verified MAE/RMSE/R² for those artifacts.

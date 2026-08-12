@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, UTC
-from typing import Any, Dict, Optional
 import math
+from datetime import UTC, datetime
+from typing import Any
 
 from flask import current_app, has_app_context
 from flask_login import UserMixin
@@ -31,7 +31,6 @@ class User(UserMixin, db.Model):
 
     def set_password(self, password: str) -> None:
         """Hash and store a password."""
-
         method = "scrypt"
         if has_app_context() and current_app.config.get("TESTING"):
             method = "pbkdf2:sha256:1000"
@@ -39,7 +38,6 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password: str) -> bool:
         """Verify a password against the stored hash."""
-
         return check_password_hash(self.password_hash, password)
 
 
@@ -59,10 +57,10 @@ class Prediction(db.Model):
     cnn_price = db.Column(db.Float, nullable=True)
     final_price = db.Column(db.Float, nullable=False)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize prediction for API responses."""
 
-        def _clean_num(val: Any) -> Optional[float]:
+        def _clean_num(val: Any) -> float | None:
             try:
                 f = float(val)
                 if math.isnan(f) or math.isinf(f):
@@ -93,9 +91,8 @@ class ChatMessage(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize chat message."""
-
         return {
             "id": self.id,
             "role": self.role,
@@ -105,9 +102,8 @@ class ChatMessage(db.Model):
 
 
 @login_manager.user_loader
-def load_user(user_id: str) -> Optional[User]:
+def load_user(user_id: str) -> User | None:
     """flask-login loader."""
-
     if user_id is None:
         return None
     try:

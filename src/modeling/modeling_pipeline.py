@@ -16,15 +16,14 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Union
 
 import joblib
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from catboost import CatBoostRegressor
+from lightgbm import LGBMRegressor
 from matplotlib import pyplot as plt
-from skopt import BayesSearchCV
-from skopt.space import Categorical, Integer, Real
 from sklearn.base import RegressorMixin, clone
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyRegressor
@@ -60,11 +59,10 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.svm import LinearSVR, SVR
+from sklearn.svm import SVR, LinearSVR
+from sklearn.tree import DecisionTreeRegressor
+from skopt.space import Categorical, Integer, Real
 from xgboost import XGBRegressor
-from lightgbm import LGBMRegressor
-from catboost import CatBoostRegressor
-
 
 # # 05: Modelling Pipeline (Regression on USA Real Estate)
 #
@@ -129,13 +127,12 @@ def load_engineered_parquet(path: str, target_col: str) -> pd.DataFrame:
     Raises:
         FileNotFoundError: If the Parquet file cannot be located.
         KeyError: If the target column is not present in the dataset.
+
     """
     try:
         df_loaded = pd.read_parquet(path)
     except FileNotFoundError as exc:
-        raise FileNotFoundError(
-            f"Dataset file not found at path: {path!r}"
-        ) from exc
+        raise FileNotFoundError(f"Dataset file not found at path: {path!r}") from exc
 
     if target_col not in df_loaded.columns:
         raise KeyError(
@@ -151,8 +148,7 @@ def load_engineered_parquet(path: str, target_col: str) -> pd.DataFrame:
 # Execute: Load engineered dataset
 # ---------------------------------------------------------------------------
 ENGINEERED_CSV_PATH = (
-    "/content/drive/MyDrive/Colab Notebooks/DOAA/"
-    "data_processed/final_dataset_20251116_0720.parquet"
+    "/content/drive/MyDrive/Colab Notebooks/DOAA/data_processed/final_dataset_20251116_0720.parquet"
 )
 
 df = load_engineered_parquet(
@@ -198,14 +194,13 @@ def infer_feature_metadata(
             - n_unique: Number of unique non-null values.
             - n_missing: Number of missing entries.
             - pct_missing: Percentage of missing entries.
+
     """
     feature_df = df_in.drop(columns=[target_col])
 
     global numeric_cols
 
-    numeric_cols = (
-        feature_df.select_dtypes(include=[np.number]).columns.tolist()
-    )
+    numeric_cols = feature_df.select_dtypes(include=[np.number]).columns.tolist()
 
     global categorical_cols
 
@@ -241,14 +236,9 @@ def infer_feature_metadata(
             }
         )
 
-    feature_metadata_df = pd.DataFrame(records).sort_values(
-        by=["feature_type", "feature"]
-    )
+    feature_metadata_df = pd.DataFrame(records).sort_values(by=["feature_type", "feature"])
 
-    print(
-        "Inferred feature types:"
-        f"\nNumeric: {numeric_cols}\nCategorical: {categorical_cols}"
-    )
+    print(f"Inferred feature types:\nNumeric: {numeric_cols}\nCategorical: {categorical_cols}")
 
     return feature_metadata_df
 
@@ -287,12 +277,12 @@ This section:
 
 def split_features_and_target(
     df_in: pd.DataFrame,
-    numeric_cols: List[str],
-    categorical_cols: List[str],
+    numeric_cols: list[str],
+    categorical_cols: list[str],
     target_col: str,
     test_size: float,
     random_state: int,
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     """Split a DataFrame into train and test sets.
 
     Args:
@@ -305,6 +295,7 @@ def split_features_and_target(
 
     Returns:
         Tuple of (X_train, X_test, y_train, y_test).
+
     """
     feature_cols = numeric_cols + categorical_cols
 
@@ -337,6 +328,7 @@ def summarise_train_test_shapes(
 
     Returns:
         DataFrame summarising the row and column counts for each split.
+
     """
     summary = pd.DataFrame(
         [
@@ -409,8 +401,8 @@ the same preprocessing logic is applied consistently in training and inference.
 
 
 def build_preprocessor(
-    numeric_cols: List[str],
-    categorical_cols: List[str],
+    numeric_cols: list[str],
+    categorical_cols: list[str],
 ) -> ColumnTransformer:
     """Build a ColumnTransformer for numeric and categorical features.
 
@@ -420,6 +412,7 @@ def build_preprocessor(
 
     Returns:
         Configured ColumnTransformer handling numeric and categorical branches.
+
     """
     numeric_transformer = Pipeline(
         steps=[
@@ -496,6 +489,7 @@ def make_pipeline(model: RegressorMixin) -> Pipeline:
 
     Returns:
         Pipeline combining preprocessing and the regressor.
+
     """
     return Pipeline(
         steps=[
@@ -506,7 +500,7 @@ def make_pipeline(model: RegressorMixin) -> Pipeline:
 
 
 # Candidate models registry
-model_candidates: Dict[str, Pipeline] = {
+model_candidates: dict[str, Pipeline] = {
     # ------------------- Baseline -------------------
     "dummy_median": make_pipeline(
         DummyRegressor(strategy="median"),
@@ -640,7 +634,7 @@ This section:
     * Returns a tidy DataFrame summarising mean/std metrics.
 """
 
-SCORING: Dict[str, str] = {
+SCORING: dict[str, str] = {
     "mae": "neg_mean_absolute_error",
     "rmse": "neg_root_mean_squared_error",
     "r2": "r2",
@@ -650,9 +644,9 @@ SCORING: Dict[str, str] = {
 def evaluate_models_cv(
     X_train: pd.DataFrame,
     y_train: pd.Series,
-    models: Dict[str, Pipeline],
+    models: dict[str, Pipeline],
     cv_strategy: KFold,
-    scoring: Dict[str, str],
+    scoring: dict[str, str],
     n_jobs_cv: int = 1,
 ) -> pd.DataFrame:
     """Run cross-validation for a dictionary of model pipelines.
@@ -674,6 +668,7 @@ def evaluate_models_cv(
 
     Returns:
         DataFrame summarising mean and standard deviation of metrics per model.
+
     """
     rows = []
 
@@ -762,7 +757,7 @@ This script:
 """
 
 # Search spaces for randomised tuning
-search_spaces: Dict[str, Dict[str, object]] = {
+search_spaces: dict[str, dict[str, object]] = {
     # Linear models
     "ridge": {
         "model__alpha": Real(1e-3, 1e3, prior="log-uniform"),
@@ -848,17 +843,12 @@ search_spaces: Dict[str, Dict[str, object]] = {
 def get_best_from_cv_summary(
     cv_summary: pd.DataFrame,
     top_n: int = 2,
-) -> List[str]:
+) -> list[str]:
     """Get the top-N model names by RMSE."""
-
     if "model" not in cv_summary.columns or "rmse_mean" not in cv_summary.columns:
-        raise KeyError(
-            "cv_summary must contain 'model' and 'rmse_mean' columns."
-        )
+        raise KeyError("cv_summary must contain 'model' and 'rmse_mean' columns.")
 
-    return cv_summary.sort_values(by="rmse_mean", ascending=True)[
-        "model"
-    ].head(top_n).tolist()
+    return cv_summary.sort_values(by="rmse_mean", ascending=True)["model"].head(top_n).tolist()
 
 
 def make_random_search_checkpoint_callback(
@@ -873,6 +863,7 @@ def make_random_search_checkpoint_callback(
 
     Returns:
         A callback function that can be invoked manually after fitting.
+
     """
     os.makedirs(checkpoint_dir, exist_ok=True)
     iter_state = {"i": 0}
@@ -884,13 +875,14 @@ def make_random_search_checkpoint_callback(
 
     def _callback(
         estimator: RandomizedSearchCV,
-        search_space: Dict[str, object],
+        search_space: dict[str, object],
     ) -> None:
         """Inner callback to persist the best estimator after tuning.
 
         Args:
             estimator: Fitted RandomizedSearchCV instance.
             search_space: Parameter distributions for this model.
+
         """
         iter_state["i"] += 1
         i = iter_state["i"]
@@ -906,9 +898,7 @@ def make_random_search_checkpoint_callback(
         )
         joblib.dump(best_estimator, model_path)
 
-        print(
-            f"[CHECKPOINT] {model_name}: iter={i} saved → {model_path}"
-        )
+        print(f"[CHECKPOINT] {model_name}: iter={i} saved → {model_path}")
 
         record = {
             "timestamp": timestamp,
@@ -931,17 +921,17 @@ def make_random_search_checkpoint_callback(
 
 
 def random_tune_top_models(
-    top_models: List[str],
-    model_registry: Dict[str, Pipeline],
-    search_spaces: Dict[str, Dict[str, object]],
+    top_models: list[str],
+    model_registry: dict[str, Pipeline],
+    search_spaces: dict[str, dict[str, object]],
     X_train: pd.DataFrame,
     y_train: pd.Series,
     random_state: int = RANDOM_STATE,
     n_iter: int = 30,
     tune_fraction: float = 0.5,
-    cv_strategy: Optional[KFold] = None,
+    cv_strategy: KFold | None = None,
     checkpoint_dir: str = os.path.join(MODEL_DIR, "tuning_checkpoints"),
-) -> Tuple[Dict[str, Pipeline], pd.DataFrame]:
+) -> tuple[dict[str, Pipeline], pd.DataFrame]:
     """Randomised hyperparameter tuning for the top-N models.
 
     Args:
@@ -960,6 +950,7 @@ def random_tune_top_models(
         Tuple of:
             - Dictionary of tuned pipelines (including the ensemble).
             - DataFrame summarising the tuning results.
+
     """
     if cv_strategy is None:
         cv_strategy = KFold(
@@ -968,8 +959,8 @@ def random_tune_top_models(
             random_state=random_state,
         )
 
-    tuned_pipelines: Dict[str, Pipeline] = {}
-    tuning_records: List[Dict[str, object]] = []
+    tuned_pipelines: dict[str, Pipeline] = {}
+    tuning_records: list[dict[str, object]] = []
 
     # Subsample for tuning to control runtime
     X_tune, _, y_tune, _ = train_test_split(
@@ -1041,9 +1032,7 @@ def random_tune_top_models(
 
     # Build VotingRegressor ensemble for the tuned top-2
     tuned_top2 = list(tuned_pipelines.keys())[:2]
-    estimators_for_voting = [
-        (name, tuned_pipelines[name]) for name in tuned_top2
-    ]
+    estimators_for_voting = [(name, tuned_pipelines[name]) for name in tuned_top2]
 
     voting_reg = VotingRegressor(
         estimators=estimators_for_voting,
@@ -1099,9 +1088,9 @@ This module:
 
 
 def build_all_final_models(
-    base_models: Dict[str, Pipeline],
-    tuned_models: Dict[str, Pipeline],
-) -> Dict[str, Pipeline]:
+    base_models: dict[str, Pipeline],
+    tuned_models: dict[str, Pipeline],
+) -> dict[str, Pipeline]:
     """Combine baseline, tuned, and ensemble models into a unified registry.
 
     Tuned models are appended with the suffix "_tuned". The VotingRegressor
@@ -1113,6 +1102,7 @@ def build_all_final_models(
 
     Returns:
         Combined dictionary of all models.
+
     """
     all_models = base_models.copy()
 
@@ -1125,9 +1115,9 @@ def build_all_final_models(
 def evaluate_final_models(
     X_train: pd.DataFrame,
     y_train: pd.Series,
-    models: Dict[str, Pipeline],
+    models: dict[str, Pipeline],
     cv_strategy: KFold,
-    scoring: Dict[str, str],
+    scoring: dict[str, str],
     n_jobs_cv: int = 1,
 ) -> pd.DataFrame:
     """Evaluate baseline + tuned models using cross-validation.
@@ -1142,6 +1132,7 @@ def evaluate_final_models(
 
     Returns:
         DataFrame summarising metrics across all models.
+
     """
     return evaluate_models_cv(
         X_train=X_train,
@@ -1156,7 +1147,7 @@ def evaluate_final_models(
 # ---------------------------------------------------------------------------
 # Execute: combine baseline + tuned + VotingRegressor into leaderboard
 # ---------------------------------------------------------------------------
-all_final_models: Dict[str, Pipeline] = build_all_final_models(
+all_final_models: dict[str, Pipeline] = build_all_final_models(
     base_models=model_candidates,
     tuned_models=tuned_pipelines,
 )
@@ -1185,17 +1176,17 @@ This module:
     * Works for both single models and ensembles (e.g. VotingRegressor).
 """
 
-EstimatorType = Union[Pipeline, RegressorMixin]
+EstimatorType = Pipeline | RegressorMixin
 
 
 def evaluate_best_model(
     selection_df: pd.DataFrame,
-    model_registry: Dict[str, object],
+    model_registry: dict[str, object],
     X_train: pd.DataFrame,
     y_train: pd.Series,
     X_test: pd.DataFrame,
     y_test: pd.Series,
-) -> Tuple[str, object, pd.DataFrame]:
+) -> tuple[str, object, pd.DataFrame]:
     """Retrieve, train, and evaluate the best model from CV results.
 
     Args:
@@ -1212,6 +1203,7 @@ def evaluate_best_model(
             - best_model_name: Name of the best model.
             - best_estimator: Fitted estimator object.
             - summary_df: DataFrame with test metrics.
+
     """
     # 1) Select the best model
     best_model_name = selection_df.iloc[0]["model"]
@@ -1281,7 +1273,7 @@ def compute_learning_curve(
     X_train: pd.DataFrame,
     y_train: pd.Series,
     cv_strategy: KFold,
-    train_sizes: Optional[np.ndarray] = None,
+    train_sizes: np.ndarray | None = None,
     scoring: str = "r2",
 ) -> pd.DataFrame:
     """Compute learning curve for a given estimator.
@@ -1297,6 +1289,7 @@ def compute_learning_curve(
     Returns:
         DataFrame with train_size, train_r2_mean, train_r2_std,
         val_r2_mean, val_r2_std.
+
     """
     if train_sizes is None:
         train_sizes = np.linspace(0.1, 1.0, 10)
@@ -1340,6 +1333,7 @@ def plot_learning_curve(
     Args:
         lc_df: DataFrame returned by compute_learning_curve.
         model_name: Name of the model (for plot title).
+
     """
     plt.figure(figsize=(8, 5))
     plt.plot(
@@ -1430,6 +1424,7 @@ def save_final_model_and_metrics(
 
     Returns:
         DataFrame summarising the test-set metrics.
+
     """
     os.makedirs(model_dir, exist_ok=True)
 

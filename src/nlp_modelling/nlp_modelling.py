@@ -26,7 +26,6 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
 
 import keras_tuner as kt
 import numpy as np
@@ -37,13 +36,9 @@ import tensorflow as tf
 # Global configuration
 # ---------------------------------------------------------------------------
 
-PROCESSED_DIR: str = (
-    "/content/drive/MyDrive/Colab Notebooks/DOAA/nlp_data_processed"
-)
+PROCESSED_DIR: str = "/content/drive/MyDrive/Colab Notebooks/DOAA/nlp_data_processed"
 
-MODEL_ROOT_DIR: str = (
-    "/content/drive/MyDrive/Colab Notebooks/DOAA/nlp_models"
-)
+MODEL_ROOT_DIR: str = "/content/drive/MyDrive/Colab Notebooks/DOAA/nlp_models"
 
 os.makedirs(MODEL_ROOT_DIR, exist_ok=True)
 
@@ -81,6 +76,7 @@ class SequenceData:
         y_test: Test targets (shape: [n_test]).
         vocab_size: Size of the vocabulary inferred from data or file.
         seq_length: Sequence length (time steps) for each sample.
+
     """
 
     X_train: np.ndarray
@@ -103,6 +99,7 @@ def configure_seeds(seed: int = RANDOM_STATE) -> None:
 
     Args:
         seed: Integer random seed for NumPy and TensorFlow.
+
     """
     np.random.seed(seed)
     tf.random.set_seed(seed)
@@ -120,6 +117,7 @@ def root_mean_squared_error(
 
     Returns:
         Scalar tensor representing the RMSE.
+
     """
     return tf.sqrt(tf.reduce_mean(tf.square(y_pred - y_true)))
 
@@ -154,6 +152,7 @@ def load_sequences_and_targets(
 
     Raises:
         FileNotFoundError: If `nlp_sequences.npz` is not found.
+
     """
     npz_path = os.path.join(processed_dir, "nlp_sequences.npz")
     if not os.path.isfile(npz_path):
@@ -226,6 +225,7 @@ def build_baseline_rnn(
 
     Returns:
         A compiled Keras Model with MSE loss, MAE, and RMSE metrics.
+
     """
     inputs = tf.keras.Input(
         shape=(seq_length,),
@@ -307,6 +307,7 @@ def make_rnn_hypermodel(
 
     Returns:
         A function `hypermodel(hp: kt.HyperParameters) -> tf.keras.Model`.
+
     """
 
     def hypermodel(hp: kt.HyperParameters) -> tf.keras.Model:
@@ -458,6 +459,7 @@ def train_model_with_callbacks(
 
     Returns:
         Keras History object with training and validation metrics.
+
     """
     os.makedirs(out_dir, exist_ok=True)
 
@@ -512,6 +514,7 @@ def save_history_and_plots(
         history: Keras History object from `model.fit`.
         out_dir: Directory to store outputs.
         prefix: Prefix for filenames (e.g. "baseline", "tuned").
+
     """
     os.makedirs(out_dir, exist_ok=True)
 
@@ -529,10 +532,7 @@ def save_history_and_plots(
         val_values = history_dict.get(f"val_{metric_name}")
 
         if values is None or val_values is None:
-            print(
-                f"[WARN] Metric '{metric_name}' not found in history. "
-                "Skipping plot."
-            )
+            print(f"[WARN] Metric '{metric_name}' not found in history. Skipping plot.")
             return
 
         import matplotlib.pyplot as plt  # Local import for plotting.
@@ -562,7 +562,7 @@ def evaluate_model(
     model: tf.keras.Model,
     X_test: np.ndarray,
     y_test: np.ndarray,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Evaluate a model on the test set.
 
     Args:
@@ -572,11 +572,11 @@ def evaluate_model(
 
     Returns:
         Dictionary mapping metric names to scalar values.
+
     """
     results = model.evaluate(X_test, y_test, verbose=1)
-    metrics_dict: Dict[str, float] = {
-        name: float(value)
-        for name, value in zip(model.metrics_names, results)
+    metrics_dict: dict[str, float] = {
+        name: float(value) for name, value in zip(model.metrics_names, results, strict=False)
     }
 
     print("[INFO] Test metrics:")
@@ -593,9 +593,9 @@ def evaluate_model(
 
 def build_results_summary(
     baseline_model: tf.keras.Model,
-    baseline_test_metrics: List[float],
+    baseline_test_metrics: list[float],
     tuned_model: tf.keras.Model,
-    tuned_test_metrics: List[float],
+    tuned_test_metrics: list[float],
     tuned_model_name: str = TUNED_MODEL_NAME,
 ) -> pd.DataFrame:
     """Construct a summary table comparing baseline and tuned models.
@@ -615,6 +615,7 @@ def build_results_summary(
 
     Raises:
         ValueError: If the metric name lists of the two models differ.
+
     """
     baseline_names = baseline_model.metrics_names
     tuned_names = tuned_model.metrics_names
@@ -629,13 +630,16 @@ def build_results_summary(
 
     baseline_row = {"model": BASELINE_MODEL_NAME}
     baseline_row.update(
-        {name: float(value) for name, value in zip(baseline_names, baseline_test_metrics)}
+        {
+            name: float(value)
+            for name, value in zip(baseline_names, baseline_test_metrics, strict=False)
+        }
     )
     rows.append(baseline_row)
 
     tuned_row = {"model": tuned_model_name}
     tuned_row.update(
-        {name: float(value) for name, value in zip(tuned_names, tuned_test_metrics)}
+        {name: float(value) for name, value in zip(tuned_names, tuned_test_metrics, strict=False)}
     )
     rows.append(tuned_row)
 
@@ -654,6 +658,7 @@ def save_results_summary(
         summary_df: DataFrame produced by `build_results_summary`.
         out_dir: Directory to store the CSV file.
         filename: Name of the CSV file to write.
+
     """
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, filename)
@@ -668,7 +673,7 @@ def save_results_summary(
 
 def run_baseline_pipeline(
     processed_dir: str = PROCESSED_DIR,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     """Run the baseline RNN training and evaluation pipeline.
 
     Args:
@@ -681,6 +686,7 @@ def run_baseline_pipeline(
             * "baseline_history": Keras History object.
             * "baseline_metrics": dict of test metrics.
             * "baseline_dir": directory where artefacts are stored.
+
     """
     configure_seeds(RANDOM_STATE)
 
@@ -729,7 +735,7 @@ def run_baseline_pipeline(
 def run_tuned_pipeline(
     processed_dir: str = PROCESSED_DIR,
     max_trials: int = TUNER_MAX_TRIALS,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     """Run Keras Tuner + tuned training and evaluation pipeline.
 
     This pipeline:
@@ -752,6 +758,7 @@ def run_tuned_pipeline(
             * "tuned_metrics": dict of test metrics.
             * "tuner": Keras Tuner object.
             * "tuned_dir": directory where artefacts are stored.
+
     """
     configure_seeds(RANDOM_STATE)
 
@@ -852,7 +859,7 @@ def run_tuned_pipeline(
 
 def run_full_nlp_modelling_pipeline(
     processed_dir: str = PROCESSED_DIR,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     """Run baseline and tuned NLP modelling pipelines and compare results.
 
     Args:
@@ -863,6 +870,7 @@ def run_full_nlp_modelling_pipeline(
             * "baseline": outputs from `run_baseline_pipeline`.
             * "tuned": outputs from `run_tuned_pipeline`.
             * "results_summary": DataFrame comparing test metrics.
+
     """
     baseline_outputs = run_baseline_pipeline(processed_dir)
     tuned_outputs = run_tuned_pipeline(processed_dir)

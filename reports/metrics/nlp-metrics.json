@@ -1,0 +1,23 @@
+{
+  "artifact": "models/best_rnn_model_full.keras",
+  "artifact_sha256": "21e9f9b50165689cad386d08d73c66223da3c1a7621f08e6de2ae1fd2a94cc09",
+  "evaluation_date": "2026-08-11",
+  "evaluation_split": "nlp_data/processed/X_test_seq.npy + y_test.npy",
+  "runtime": {
+    "numpy": "1.26.4",
+    "python": "3.12.2",
+    "scikit_learn": "1.6.1",
+    "tensorflow_cpu": "2.21.0"
+  },
+  "metrics": {
+    "mae_usd": 157378.25,
+    "prediction_max_usd": 1463931.375,
+    "prediction_min_usd": 218860.296875,
+    "r2": 0.4403911828994751,
+    "rmse_usd": 311910.02600108896,
+    "samples": 1517,
+    "target_max_usd": 6000000.0,
+    "target_min_usd": 52500.0
+  },
+  "notes": "CPU inference with oneDNN may produce immaterial floating-point variation across hosts."
+}

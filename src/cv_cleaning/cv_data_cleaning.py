@@ -25,8 +25,8 @@ from __future__ import annotations
 import os
 import shutil
 import zipfile
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -39,17 +39,13 @@ from sklearn.model_selection import train_test_split
 # Default paths (override these when importing the module if needed)
 # ---------------------------------------------------------------------------
 
-RAW_ZIP_PATH: str = (
-    "/content/drive/MyDrive/Colab Notebooks/DOAA/cv_data_raw/archive (8).zip"
-)
+RAW_ZIP_PATH: str = "/content/drive/MyDrive/Colab Notebooks/DOAA/cv_data_raw/archive (8).zip"
 EXTRACT_DIR: str = "/content/austin_cv_data"
 
 CSV_FILENAME: str = "austinHousingData.csv"
 IMAGE_SUBDIR: str = "homeImages"
 
-PROCESSED_DIR: str = (
-    "/content/drive/MyDrive/Colab Notebooks/DOAA/cv_data_processed"
-)
+PROCESSED_DIR: str = "/content/drive/MyDrive/Colab Notebooks/DOAA/cv_data_processed"
 
 
 # ---------------------------------------------------------------------------
@@ -71,6 +67,7 @@ class SplitArrays:
         price_mean: Mean of log1p(price_usd) on the training split.
         price_std: Standard deviation of log1p(price_usd) on the
             training split.
+
     """
 
     x_train: np.ndarray
@@ -94,6 +91,7 @@ class TfDatasets:
         steps_per_epoch: Number of batches in one training epoch.
         val_steps: Number of batches in one validation epoch.
         test_steps: Number of batches in the test evaluation loop.
+
     """
 
     train_ds: tf.data.Dataset
@@ -121,6 +119,7 @@ def unzip_raw_data(raw_zip_path: str, extract_dir: str) -> None:
 
     Raises:
         FileNotFoundError: If ``raw_zip_path`` does not exist.
+
     """
     if not os.path.isfile(raw_zip_path):
         raise FileNotFoundError(f"Zip file not found: {raw_zip_path}")
@@ -168,6 +167,7 @@ def load_metadata(csv_path: str, image_root: str) -> pd.DataFrame:
     Raises:
         FileNotFoundError: If the CSV file cannot be found.
         KeyError: If required columns are missing from the CSV.
+
     """
     if not os.path.isfile(csv_path):
         raise FileNotFoundError(f"CSV file not found: {csv_path}")
@@ -188,20 +188,13 @@ def load_metadata(csv_path: str, image_root: str) -> pd.DataFrame:
     )
 
     df["image_filename"] = df["image_filename"].astype(str)
-    df["image_path"] = df["image_filename"].apply(
-        lambda name: os.path.join(image_root, name)
-    )
+    df["image_path"] = df["image_filename"].apply(lambda name: os.path.join(image_root, name))
 
     df["image_exists"] = df["image_path"].apply(os.path.isfile)
-    df = df[df["image_exists"]].drop(
-        columns=["image_exists", "image_filename"]
-    )
+    df = df[df["image_exists"]].drop(columns=["image_exists", "image_filename"])
     df = df.reset_index(drop=True)
 
-    print(
-        "[INFO] Cleaned metadata with images: "
-        f"{df.shape[0]} rows × {df.shape[1]} columns"
-    )
+    print(f"[INFO] Cleaned metadata with images: {df.shape[0]} rows × {df.shape[1]} columns")
     return df
 
 
@@ -214,6 +207,7 @@ def plot_price_boxplot(df: pd.DataFrame, price_col: str = "price_usd") -> None:
 
     Raises:
         KeyError: If the specified price column is not present.
+
     """
     if price_col not in df.columns:
         raise KeyError(f"Column {price_col!r} not found in DataFrame.")
@@ -235,8 +229,8 @@ def plot_price_boxplot(df: pd.DataFrame, price_col: str = "price_usd") -> None:
 
 def clean_and_filter(
     df: pd.DataFrame,
-    min_price_usd: Optional[float] = None,
-    max_price_usd: Optional[float] = None,
+    min_price_usd: float | None = None,
+    max_price_usd: float | None = None,
     winsor_upper: float = 0.75 * 1e7,
 ) -> pd.DataFrame:
     """Clean the dataset and filter valid rows for CV regression.
@@ -264,6 +258,7 @@ def clean_and_filter(
 
     Raises:
         KeyError: If required columns are missing from ``df``.
+
     """
     required_cols = {"price_usd", "image_path"}
     missing = required_cols.difference(df.columns)
@@ -337,6 +332,7 @@ def create_splits(
         KeyError: If required columns are missing.
         ValueError: If ``train_size + val_size + test_size`` is not 1.0
             within a small numerical tolerance.
+
     """
     required_cols = {"image_path", "price_usd"}
     missing_cols = required_cols.difference(df.columns)
@@ -344,9 +340,7 @@ def create_splits(
         raise KeyError(f"Missing required columns: {missing_cols}")
 
     if not np.isclose(train_size + val_size + test_size, 1.0):
-        raise ValueError(
-            "train_size + val_size + test_size must sum to 1.0."
-        )
+        raise ValueError("train_size + val_size + test_size must sum to 1.0.")
 
     x_all = df["image_path"].to_numpy()
     y_all = df["price_usd"].to_numpy(dtype=np.float32)
@@ -381,10 +375,7 @@ def create_splits(
     y_val_norm = _normalise(y_val)
     y_test_norm = _normalise(y_test)
 
-    print(
-        "[INFO] Split sizes – "
-        f"train: {len(x_train)}, val: {len(x_val)}, test: {len(x_test)}"
-    )
+    print(f"[INFO] Split sizes – train: {len(x_train)}, val: {len(x_val)}, test: {len(x_test)}")
 
     return SplitArrays(
         x_train=x_train,
@@ -429,6 +420,7 @@ def load_and_preprocess_image(
 
     Returns:
         Float32 image tensor of shape (img_height, img_width, 3).
+
     """
 
     def _py_load_image(path_bytes: bytes) -> np.ndarray:
@@ -470,6 +462,7 @@ def make_tf_datasets(
 
     Returns:
         TfDatasets instance containing tf.data pipelines and step counts.
+
     """
     autotune = tf.data.AUTOTUNE
 
@@ -492,7 +485,7 @@ def make_tf_datasets(
         def _map_fn(
             path: tf.Tensor,
             target: tf.Tensor,
-        ) -> Tuple[tf.Tensor, tf.Tensor]:
+        ) -> tuple[tf.Tensor, tf.Tensor]:
             image = load_and_preprocess_image(path, img_height, img_width)
             if augment:
                 image = aug_layer(image, training=True)
@@ -535,10 +528,7 @@ def make_tf_datasets(
     val_steps = int(np.ceil(len(splits.x_val) / batch_size))
     test_steps = int(np.ceil(len(splits.x_test) / batch_size))
 
-    print(
-        "[INFO] Dataset steps – "
-        f"train: {steps_per_epoch}, val: {val_steps}, test: {test_steps}"
-    )
+    print(f"[INFO] Dataset steps – train: {steps_per_epoch}, val: {val_steps}, test: {test_steps}")
 
     return TfDatasets(
         train_ds=train_ds,
@@ -563,6 +553,7 @@ def inspect_one_batch(train_dataset: tf.data.Dataset) -> None:
     Args:
         train_dataset: ``tf.data.Dataset`` that yields (image, target)
             batches.
+
     """
     for images, targets in train_dataset.take(1):
         sample_images = images
@@ -603,6 +594,7 @@ def summarise_dataframe_stages(
 
     Returns:
         DataFrame with one row per stage and the corresponding row count.
+
     """
     stages = [
         "raw_metadata",
@@ -625,6 +617,7 @@ def summarise_splits(splits: SplitArrays) -> pd.DataFrame:
 
     Returns:
         DataFrame with counts for train / val / test splits.
+
     """
     split_names = ["train", "val", "test"]
     counts = [
@@ -635,7 +628,7 @@ def summarise_splits(splits: SplitArrays) -> pd.DataFrame:
     return pd.DataFrame({"split": split_names, "num_samples": counts})
 
 
-def build_price_lookup(df_clean: pd.DataFrame) -> Dict[str, float]:
+def build_price_lookup(df_clean: pd.DataFrame) -> dict[str, float]:
     """Create a lookup mapping from image path to ``price_usd``.
 
     Args:
@@ -643,16 +636,15 @@ def build_price_lookup(df_clean: pd.DataFrame) -> Dict[str, float]:
 
     Returns:
         Dictionary mapping full image path to price in USD.
+
     """
     if not {"image_path", "price_usd"}.issubset(df_clean.columns):
-        raise KeyError(
-            "df_clean must contain 'image_path' and 'price_usd' columns."
-        )
-    return dict(zip(df_clean["image_path"], df_clean["price_usd"]))
+        raise KeyError("df_clean must contain 'image_path' and 'price_usd' columns.")
+    return dict(zip(df_clean["image_path"], df_clean["price_usd"], strict=False))
 
 
 def prepare_split_dir(processed_dir: str, split_name: str) -> str:
-    """Prepare (reset) the directory for a given split.
+    r"""Prepare (reset) the directory for a given split.
 
     This function removes any existing directory for the split and
     recreates the ``images`` subdirectory.
@@ -663,6 +655,7 @@ def prepare_split_dir(processed_dir: str, split_name: str) -> str:
 
     Returns:
         Path to the split directory.
+
     """
     split_dir = os.path.join(processed_dir, split_name)
 
@@ -678,7 +671,7 @@ def prepare_split_dir(processed_dir: str, split_name: str) -> str:
 def export_split(
     x_paths: Sequence[str],
     split_name: str,
-    price_lookup: Dict[str, float],
+    price_lookup: dict[str, float],
     processed_dir: str,
 ) -> None:
     """Export a dataset split into ``images/`` + ``labels.csv`` format.
@@ -688,12 +681,13 @@ def export_split(
         split_name: Name of the split (train / val / test).
         price_lookup: Mapping from image path to true ``price_usd``.
         processed_dir: Root directory for processed CV data.
+
     """
     split_dir = prepare_split_dir(processed_dir, split_name)
     images_dir = os.path.join(split_dir, "images")
 
-    filenames: List[str] = []
-    labels: List[float] = []
+    filenames: list[str] = []
+    labels: list[float] = []
 
     for src_path in x_paths:
         src_path_str = str(src_path)
@@ -718,9 +712,7 @@ def export_split(
     labels_path = os.path.join(split_dir, "labels.csv")
     labels_df.to_csv(labels_path, index=False)
 
-    print(
-        f"[INFO] Exported {split_name}: {len(filenames)} images → {images_dir}"
-    )
+    print(f"[INFO] Exported {split_name}: {len(filenames)} images → {images_dir}")
     print(f"[INFO] Labels (price_usd) written to: {labels_path}")
 
 
@@ -734,11 +726,12 @@ def summarise_exported_splits(base_dir: str) -> pd.DataFrame:
     Returns:
         DataFrame with columns ``split``, ``num_images_on_disk``, and
         ``num_labels_in_csv``.
+
     """
     split_names = ["train", "val", "test"]
-    split_list: List[str] = []
-    image_counts: List[int] = []
-    label_counts: List[int] = []
+    split_list: list[str] = []
+    image_counts: list[int] = []
+    label_counts: list[int] = []
 
     for split_name in split_names:
         split_dir = os.path.join(base_dir, split_name)
@@ -781,7 +774,7 @@ def run_full_cv_data_pipeline(
     raw_zip_path: str = RAW_ZIP_PATH,
     extract_dir: str = EXTRACT_DIR,
     processed_dir: str = PROCESSED_DIR,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     """Run the full CV data preparation and export pipeline.
 
     This function is intended to be called from a notebook or as a
@@ -803,6 +796,7 @@ def run_full_cv_data_pipeline(
     Returns:
         Dictionary of artefacts including DataFrames, split arrays,
         datasets, and summary tables.
+
     """
     unzip_raw_data(raw_zip_path=raw_zip_path, extract_dir=extract_dir)
 

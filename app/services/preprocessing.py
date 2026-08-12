@@ -5,12 +5,11 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple, Set
 
 import numpy as np
 import pandas as pd
 
-STRUCTURED_BASE_COLS: Tuple[str, ...] = (
+STRUCTURED_BASE_COLS: tuple[str, ...] = (
     "bed",
     "bath",
     "house_size",
@@ -58,7 +57,7 @@ CITY_BAD_TOKENS = {
     "way",
     "heights",
 }
-STATE_NAME_TO_ABBR: Dict[str, str] = {
+STATE_NAME_TO_ABBR: dict[str, str] = {
     "alabama": "AL",
     "alaska": "AK",
     "arizona": "AZ",
@@ -115,12 +114,13 @@ STATE_NAME_TO_ABBR: Dict[str, str] = {
     "wyoming": "WY",
 }
 
-STATE_ABBR_TO_NAME: Dict[str, str] = {abbr.lower(): name for name, abbr in STATE_NAME_TO_ABBR.items()}
+STATE_ABBR_TO_NAME: dict[str, str] = {
+    abbr.lower(): name for name, abbr in STATE_NAME_TO_ABBR.items()
+}
 
 
 def _clean_city_name(name: str | None) -> str | None:
     """Normalize and filter noisy city labels down to plausible US cities."""
-
     if not isinstance(name, str):
         return None
     cleaned = name.strip().lower()
@@ -141,7 +141,6 @@ def _clean_city_name(name: str | None) -> str | None:
 
 def _clean_state_name(name: str | None) -> str | None:
     """Normalize state names/abbreviations to canonical lowercase names."""
-
     if not isinstance(name, str):
         return None
     cleaned = name.strip().lower().replace(".", "")
@@ -154,12 +153,11 @@ def _clean_state_name(name: str | None) -> str | None:
     return None
 
 
-def _build_city_state_lookup(valid_states: Set[str]) -> Dict[str, Set[str]]:
+def _build_city_state_lookup(valid_states: set[str]) -> dict[str, set[str]]:
     """Build a lookup of city -> possible states using pgeocode (offline dataset).
 
     Only unambiguous mappings are later used; this merely captures candidates.
     """
-
     try:
         import pgeocode
     except ImportError:
@@ -168,7 +166,7 @@ def _build_city_state_lookup(valid_states: Set[str]) -> Dict[str, Set[str]]:
     nomi = pgeocode.Nominatim("US")
     df_geo = nomi._data[["place_name", "state_name", "state_code"]].dropna()
 
-    lookup: Dict[str, Set[str]] = {}
+    lookup: dict[str, set[str]] = {}
     for _, row in df_geo.iterrows():
         states = {
             st
@@ -194,7 +192,6 @@ def _build_city_state_lookup(valid_states: Set[str]) -> Dict[str, Set[str]]:
 
 def _safe_div(n: pd.Series, d: pd.Series) -> pd.Series:
     """Element-wise safe division used by the feature engineering pipeline."""
-
     d_safe = d.replace(0, np.nan)
     return n / d_safe
 
@@ -210,16 +207,15 @@ def load_listing_counts(
     path: Path = Path("models/city_state_counts.json"),
     city_csv: Path = Path("models/city_listing_summary.csv"),
     state_csv: Path = Path("models/state_listing_summary.csv"),
-) -> Dict[str, Dict[str, int]]:
+) -> dict[str, dict[str, int]]:
     """Load city/state listing counts, cleaning noise and building a state->cities map.
 
     Preference is given to the CSV summaries shipped alongside the project. If
     they are absent, the legacy JSON fallback is used.
     """
-
-    city_counts: Dict[str, int] = {}
-    state_counts: Dict[str, int] = {}
-    state_to_cities: Dict[str, Dict[str, int]] = {}
+    city_counts: dict[str, int] = {}
+    state_counts: dict[str, int] = {}
+    state_to_cities: dict[str, dict[str, int]] = {}
 
     # Load state counts first so we can validate state names when mapping cities.
     if state_csv.exists():
@@ -268,7 +264,7 @@ def load_listing_counts(
 
     # Drop cities that cannot be mapped to a US state to avoid leaking addresses or non-US places.
     if state_to_cities:
-        valid_cities: Set[str] = set()
+        valid_cities: set[str] = set()
         for cities in state_to_cities.values():
             valid_cities.update(cities.keys())
         city_counts = {city: count for city, count in city_counts.items() if city in valid_cities}
@@ -309,8 +305,8 @@ def load_listing_counts(
 
 
 def engineer_minimal_from_payload(
-    payload: Dict[str, object],
-    counts: Dict[str, Dict[str, int]] | None = None,
+    payload: dict[str, object],
+    counts: dict[str, dict[str, int]] | None = None,
 ) -> pd.DataFrame:
     """Build a single-row DataFrame limited to the deployed feature set.
 
@@ -336,9 +332,9 @@ def engineer_minimal_from_payload(
 
     total_rooms = bed + bath
 
-    city_raw = (payload.get("city") or "unknown")
-    state_raw = (payload.get("state") or "unknown")
-    status_raw = (payload.get("status") or "unknown")
+    city_raw = payload.get("city") or "unknown"
+    state_raw = payload.get("state") or "unknown"
+    status_raw = payload.get("status") or "unknown"
 
     city_clean = _clean_city_name(str(city_raw)) or "unknown"
     state_clean = _clean_state_name(str(state_raw)) or str(state_raw).strip().lower()

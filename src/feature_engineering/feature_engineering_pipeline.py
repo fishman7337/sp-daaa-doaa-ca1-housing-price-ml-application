@@ -23,7 +23,6 @@ from __future__ import annotations
 import os
 import warnings
 from datetime import datetime
-from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -39,8 +38,7 @@ RANDOM_STATE: int = 42
 MAX_SAMPLE_FOR_STATS: int = 200_000
 
 CLEANED_DATA_PATH: str = (
-    "/content/drive/MyDrive/Colab Notebooks/DOAA/"
-    "data_processed/usa_real_estate_clean.csv"
+    "/content/drive/MyDrive/Colab Notebooks/DOAA/data_processed/usa_real_estate_clean.csv"
 )
 
 
@@ -56,6 +54,7 @@ def _safe_div(n: pd.Series, d: pd.Series) -> pd.Series:
 
     Returns:
         A pandas Series containing the result of the safe division.
+
     """
     d_safe = d.replace(0, np.nan)
     return n / d_safe
@@ -64,7 +63,7 @@ def _safe_div(n: pd.Series, d: pd.Series) -> pd.Series:
 def engineer_features_minimal(
     df: pd.DataFrame,
     target_col: str = TARGET_COL,
-) -> Tuple[pd.DataFrame, Dict[str, List[str]]]:
+) -> tuple[pd.DataFrame, dict[str, list[str]]]:
     """Engineer leakage-free features for the real-estate dataset.
 
     This function creates a minimal, interpretable set of engineered features
@@ -86,11 +85,12 @@ def engineer_features_minimal(
                 original columns.
             parent_map: Mapping from engineered feature names to a list of
                 original parent columns used to derive them.
+
     """
     del target_col  # explicit to show we do not use it for leakage
 
     df_fe = df.copy()
-    parent_map: Dict[str, List[str]] = {}
+    parent_map: dict[str, list[str]] = {}
 
     # --- Basic presence flags ---
     has_h = "house_size" in df_fe.columns
@@ -152,38 +152,24 @@ def engineer_features_minimal(
 
     # 5) City/State Density
     if "city" in df_fe.columns:
-        df_fe["city_clean"] = (
-            df_fe["city"].astype(str).str.lower().str.strip()
-        )
-        df_fe["city_listing_count"] = (
-            df_fe.groupby("city_clean")["city_clean"].transform("count")
-        )
+        df_fe["city_clean"] = df_fe["city"].astype(str).str.lower().str.strip()
+        df_fe["city_listing_count"] = df_fe.groupby("city_clean")["city_clean"].transform("count")
         parent_map["city_listing_count"] = ["city"]
 
     if "state" in df_fe.columns:
-        df_fe["state_clean"] = (
-            df_fe["state"].astype(str).str.lower().str.strip()
-        )
-        df_fe["state_listing_count"] = (
-            df_fe.groupby("state_clean")["state_clean"].transform("count")
+        df_fe["state_clean"] = df_fe["state"].astype(str).str.lower().str.strip()
+        df_fe["state_listing_count"] = df_fe.groupby("state_clean")["state_clean"].transform(
+            "count"
         )
         parent_map["state_listing_count"] = ["state"]
 
     # 6) Status Encoding — sold / for_sale / ready_to_build
     if "status" in df_fe.columns:
-        df_fe["status_clean"] = (
-            df_fe["status"].astype(str).str.lower().str.strip()
-        )
+        df_fe["status_clean"] = df_fe["status"].astype(str).str.lower().str.strip()
 
-        df_fe["status_is_for_sale"] = (
-            df_fe["status_clean"] == "for_sale"
-        ).astype(int)
-        df_fe["status_is_sold"] = (
-            df_fe["status_clean"] == "sold"
-        ).astype(int)
-        df_fe["status_is_ready_to_build"] = (
-            df_fe["status_clean"] == "ready_to_build"
-        ).astype(int)
+        df_fe["status_is_for_sale"] = (df_fe["status_clean"] == "for_sale").astype(int)
+        df_fe["status_is_sold"] = (df_fe["status_clean"] == "sold").astype(int)
+        df_fe["status_is_ready_to_build"] = (df_fe["status_clean"] == "ready_to_build").astype(int)
 
         parent_map["status_is_for_sale"] = ["status"]
         parent_map["status_is_sold"] = ["status"]
@@ -194,7 +180,7 @@ def engineer_features_minimal(
 
 def run_minimal_feature_engineering(
     df: pd.DataFrame,
-) -> Tuple[pd.DataFrame, Dict[str, List[str]]]:
+) -> tuple[pd.DataFrame, dict[str, list[str]]]:
     """Apply minimal feature engineering and log shape changes.
 
     This helper wraps :func:`engineer_features_minimal` to:
@@ -211,6 +197,7 @@ def run_minimal_feature_engineering(
             df_fe: DataFrame with engineered features added.
             parent_map: Mapping from engineered feature names to their
                 originating raw columns.
+
     """
     df_fe, parent_map = engineer_features_minimal(df)
 
@@ -226,7 +213,7 @@ def run_minimal_feature_engineering(
 def evaluate_engineered_features(
     df: pd.DataFrame,
     target_col: str,
-    engineered_cols: List[str],
+    engineered_cols: list[str],
     max_sample: int = MAX_SAMPLE_FOR_STATS,
 ) -> pd.DataFrame:
     """Evaluate engineered features using correlation and mutual information.
@@ -258,6 +245,7 @@ def evaluate_engineered_features(
             * ``mutual_info``: Mutual information score with the target.
 
         The output is sorted in descending order of ``mutual_info``.
+
     """
     df_eval = df[[target_col] + engineered_cols].copy()
     df_eval = df_eval.replace([np.inf, -np.inf], np.nan).dropna()
@@ -266,7 +254,7 @@ def evaluate_engineered_features(
         df_eval = df_eval.sample(max_sample, random_state=RANDOM_STATE)
 
     y = df_eval[target_col].values
-    summary_rows: List[Dict[str, float]] = []
+    summary_rows: list[dict[str, float]] = []
 
     for col in engineered_cols:
         x = df_eval[col].values
@@ -286,7 +274,7 @@ def evaluate_engineered_features(
         random_state=RANDOM_STATE,
     )
 
-    for row, mi in zip(summary_rows, mi_vals):
+    for row, mi in zip(summary_rows, mi_vals, strict=False):
         row["mutual_info"] = mi
 
     summary_df = pd.DataFrame(summary_rows)
@@ -298,8 +286,8 @@ def evaluate_engineered_features(
 def build_feature_matrix(
     df: pd.DataFrame,
     target_col: str,
-    engineered_cols: List[str],
-) -> Tuple[pd.DataFrame, pd.Series]:
+    engineered_cols: list[str],
+) -> tuple[pd.DataFrame, pd.Series]:
     """Construct the numeric feature matrix for modelling.
 
     This function consolidates raw numeric features and engineered features
@@ -320,6 +308,7 @@ def build_feature_matrix(
 
             * X_candidates: A DataFrame of numeric candidate features.
             * y: The target Series aligned to ``X_candidates``.
+
     """
     num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     if target_col in num_cols:
@@ -373,6 +362,7 @@ def run_univariate_feature_screening(
               the target.
 
         The DataFrame is sorted in descending order of ``mutual_info``.
+
     """
     if len(X) > max_sample:
         X_fs, _, y_fs, _ = train_test_split(
@@ -409,8 +399,8 @@ def run_univariate_feature_screening(
 
 def decide_feature_retention(
     fs_table: pd.DataFrame,
-    parent_map: Dict[str, List[str]],
-) -> Tuple[List[str], List[str]]:
+    parent_map: dict[str, list[str]],
+) -> tuple[list[str], list[str]]:
     """Resolve which features to keep, comparing engineered vs parent features.
 
     This function uses mutual information scores from ``fs_table`` and the
@@ -443,12 +433,13 @@ def decide_feature_retention(
 
             * keep_features: Sorted list of feature names to retain.
             * drop_features: Sorted list of feature names to drop.
+
     """
     mi_lookup = fs_table.set_index("feature")["mutual_info"].to_dict()
     all_features = set(fs_table["feature"].tolist())
 
-    drop_features: List[str] = []
-    prefer_engineered: List[str] = []
+    drop_features: list[str] = []
+    prefer_engineered: list[str] = []
 
     for eng_feat, parents in parent_map.items():
         if eng_feat not in all_features:
@@ -476,8 +467,8 @@ def decide_feature_retention(
 def build_final_feature_matrix(
     X_candidates: pd.DataFrame,
     y: pd.Series,
-    keep_features: List[str],
-) -> Tuple[pd.DataFrame, pd.Series]:
+    keep_features: list[str],
+) -> tuple[pd.DataFrame, pd.Series]:
     """Construct the final feature matrix for modelling.
 
     This function:
@@ -499,20 +490,18 @@ def build_final_feature_matrix(
 
             * X_final: Final feature matrix for modelling.
             * y_final: Target series (unchanged, but aligned to ``X_final``).
+
     """
     X_final = X_candidates[keep_features].copy()
     y_final = y.copy()
 
-    status_cols = [
-        col for col in X_final.columns if col.startswith("status_is_")
-    ]
+    status_cols = [col for col in X_final.columns if col.startswith("status_is_")]
 
     if len(status_cols) > 1:
         status_cols_sorted = sorted(status_cols)
         col_to_drop = status_cols_sorted[0]
         print(
-            "[INFO] Dropping one-hot category to avoid dummy trap: "
-            f"{col_to_drop}",
+            f"[INFO] Dropping one-hot category to avoid dummy trap: {col_to_drop}",
         )
         X_final = X_final.drop(columns=[col_to_drop])
 
@@ -527,8 +516,7 @@ def build_final_feature_matrix(
             if redundant_col in X_final.columns:
                 if base in X_final.columns or log_col in X_final.columns:
                     print(
-                        "[INFO] Dropping redundant unit-converted feature: "
-                        f"{redundant_col}",
+                        f"[INFO] Dropping redundant unit-converted feature: {redundant_col}",
                     )
                     X_final = X_final.drop(columns=[redundant_col])
 
@@ -542,7 +530,7 @@ def export_final_datasets(
     X_final: pd.DataFrame,
     y_final: pd.Series,
     output_dir: str = "data_processed",
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Export the final modelling datasets in both Parquet and CSV formats.
 
     This function:
@@ -564,6 +552,7 @@ def export_final_datasets(
 
     Returns:
         A dictionary containing the filepaths of all exported files.
+
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -617,6 +606,7 @@ def load_and_trim_clean_dataset(
     Returns:
         A trimmed DataFrame, suitable as input to the feature engineering
         pipeline.
+
     """
     df_clean = pd.read_csv(path)
 
@@ -704,8 +694,7 @@ def main() -> None:
     print("\n[INFO] Features to KEEP (first 40):")
     print(keep_feats[:40])
     print(
-        f"\n[INFO] Total kept: {len(keep_feats)}  |  "
-        f"Total dropped: {len(drop_feats)}",
+        f"\n[INFO] Total kept: {len(keep_feats)}  |  Total dropped: {len(drop_feats)}",
     )
 
     X_final, y_final = build_final_feature_matrix(

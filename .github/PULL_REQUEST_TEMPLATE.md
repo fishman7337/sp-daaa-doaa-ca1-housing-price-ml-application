@@ -13,6 +13,10 @@
 ## Validation
 
 - [ ] `python scripts/check_project.py --ci`
+- [ ] `python -m ruff check .`
+- [ ] `python -m ruff format --check .`
+- [ ] `python -m bandit -r app scripts -q -ll`
+- [ ] `python -m pip_audit --local`
 - [ ] `python -m compileall app src tests scripts`
 - [ ] `python -m pytest`
 

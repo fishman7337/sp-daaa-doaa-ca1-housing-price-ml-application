@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-import sys
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-from typing import Dict
 
 import pytest
 
@@ -29,7 +26,7 @@ def client(tmp_path: Path):
         yield client, app
 
 
-def _register_and_login(client, username: str = "alice") -> Dict[str, str]:
+def _register_and_login(client, username: str = "alice") -> dict[str, str]:
     client.post(
         "/signup",
         data={
